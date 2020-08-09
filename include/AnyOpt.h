@@ -9,8 +9,10 @@
 #include <string.h>
 #include <assert.h>
 
-#ifdef ANYOPT_RUNTIME_ASSERTION
-#define ASSERT_CODE(expr, msg) if (!expr) { \
+// if ANYOPT_RUNTIME_ASSERTION is defined
+// then AnyOpt uses runtime assertions instead of compile-time assertions
+
+#define RUNTIME_ASSERTION(expr, msg) if (!expr) { \
     fprintf(\
         stderr,\
         "--- ASSERTION TRIGGERED ---\n"\
@@ -24,19 +26,14 @@
     fflush(stderr); \
     abort(); \
 }
+
+#ifdef ANYOPT_RUNTIME_ASSERTION
+#define ASSERT_CODE(expr, msg) RUNTIME_ASSERTION(expr, msg)
 #else
 #define ASSERT_CODE(expr, msg) static_assert(expr, msg)
 #endif
 
-// TODO: test flags
-
-// https://stackoverflow.com/a/17431484 - How to write runnable tests of static_assert?
-
-// https://stackoverflow.com/questions/31607928/is-it-possible-to-assert-does-not-compile-with-gtest
-// -
-// Just a random stupid idea:
-// #define static_assert assert
-// at the top of the test file. Ugly but maybe it's what you want.
+#define AnyOpt_Catch_Flag_POSIX_REGEX(FLAG_NAME) #FLAG_NAME
 
 // const AnyOpt a(new int, true);
 // alternative to
@@ -107,20 +104,30 @@ public:
         virtual dummy *clone() const = 0;
         virtual ~dummy() = default;
     };
-    template<typename T> class storage : public dummy {
+
+    template<typename T>
+    class storage : public dummy {
     public:
         T* data = nullptr;
 
         bool pointer_is_allocated = false;
         bool is_pointer = false;
 
+        // cannot be templated due to unknown data type of
+        // const_cast<AnyOptCustomFlags*>(this)->data = obj->data->clone();
+        // in which, obj->data is of type dummy, which needs to be cast to type Storage<T>
+        // in order to obtain its data correctly, however this is impossible for
+        // situations such as copy constructors/initializations/assignments
+
         virtual storage * clone() const {
             puts("AnyOptCustomFlags::storage clone");
             fflush(stdout);
+            // void* cannot be dereferenced
             return new storage(*data);
         }
-
-        storage(const T &x) {
+        
+        template<class P, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, P>::type>
+        storage(const P &x) {
             ensure_flag_enabled(
                     FLAGS,
                     AnyOpt_FLAG_COPY_ONLY,
@@ -144,7 +151,8 @@ public:
             }
         }
 
-        storage(T &&x) {
+        template<class P, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, P>::type>
+        storage(P &&x) {
             ensure_flag_enabled(
                     FLAGS,
                     AnyOpt_FLAG_MOVE_ONLY,
@@ -173,7 +181,8 @@ public:
             pointer_is_allocated = allocation;
         }
 
-        storage &operator=(const T &x)  {
+        template<class P, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, P>::type>
+        storage &operator=(const P &x)  {
             ensure_flag_enabled(
                     FLAGS,
                     AnyOpt_FLAG_COPY_ONLY,
@@ -189,7 +198,8 @@ public:
             return *const_cast<storage<T>*>(this);
         }
 
-        storage &operator=(T &&x)  {
+        template<class P, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, P>::type>
+        storage &operator=(P &&x)  {
             ensure_flag_enabled(
                     FLAGS,
                     AnyOpt_FLAG_MOVE_ONLY,
@@ -219,6 +229,8 @@ public:
 
         // this MUST be able to be called regardless of stored type
         void deallocate() const {
+            // an allocation could be cast to void* in order to avoid calling destructors
+            // upon deletion
             if (pointer_is_allocated) {
                 if (is_pointer) {
                     puts("AnyOptCustomFlags::storage data an allocated pointer");
@@ -302,7 +314,8 @@ public:
         const_cast<AnyOptCustomFlags*>(this)->data_is_allocated = false;
     }
 
-    template<typename T> void store_copy(const T & what, const char * type) const {
+    template<class T, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, T>::type>
+    void store_copy(const T & what, const char * type) const {
         ensure_flag_enabled(
                 FLAGS,
                 AnyOpt_FLAG_COPY_ONLY,
@@ -363,7 +376,8 @@ public:
         }
     }
 
-    template<typename T> void store_move(T && what, const char * type) const {
+    template<class T, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, T>::type>
+    void store_move(T && what, const char * type) const {
         ensure_flag_enabled(
                 FLAGS,
                 AnyOpt_FLAG_MOVE_ONLY,
@@ -396,7 +410,8 @@ public:
         }
     }
 
-    template<typename T> void store_pointer(T * what, bool allocated, const char * type) const {
+    template<typename T>
+    void store_pointer(T * what, bool allocated, const char * type) const {
         ensure_flag_enabled(
                 FLAGS,
                 AnyOpt_FLAG_ENABLE_POINTERS,
@@ -417,7 +432,8 @@ public:
         const_cast<AnyOptCustomFlags*>(this)->isAnyNullOpt = false;
     }
 
-    template<typename T> AnyOptCustomFlags(const T &what) {
+    template<class T, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, T>::type>
+    AnyOptCustomFlags(const T &what) {
         ensure_flag_enabled(
                 FLAGS,
                 AnyOpt_FLAG_COPY_ONLY,
@@ -426,7 +442,8 @@ public:
         store_copy(what, "constructor");
     }
 
-    template<typename T> AnyOptCustomFlags(T &&what) {
+    template<class T, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, T>::type>
+    AnyOptCustomFlags(T &&what) {
         ensure_flag_enabled(
                 FLAGS,
                 AnyOpt_FLAG_MOVE_ONLY,
@@ -435,7 +452,8 @@ public:
         store_move(what, "constructor");
     }
 
-    template<typename T> AnyOptCustomFlags(T * what) {
+    template<typename T>
+    AnyOptCustomFlags(T * what) {
         ensure_flag_enabled(
                 FLAGS,
                 AnyOpt_FLAG_ENABLE_POINTERS,
@@ -444,7 +462,8 @@ public:
         store_pointer(what, false, "constructor");
     }
 
-    template<typename T> AnyOptCustomFlags(T * what, bool allocation) {
+    template<typename T>
+    AnyOptCustomFlags(T * what, bool allocation) {
         ensure_flag_enabled(
                 FLAGS,
                 AnyOpt_FLAG_ENABLE_POINTERS,
@@ -453,7 +472,6 @@ public:
         store_pointer(what, allocation, "constructor");
     }
 
-    /* Copy constructor */
     AnyOptCustomFlags(const AnyOptCustomFlags &what) {
         ensure_flag_enabled(
                 FLAGS,
@@ -463,7 +481,6 @@ public:
         store_copy(what, "constructor");
     }
 
-    /* Move constructor */
     AnyOptCustomFlags(AnyOptCustomFlags &&what) {
         ensure_flag_enabled(
                 FLAGS,
@@ -530,7 +547,8 @@ public:
         return *const_cast<AnyOptCustomFlags*>(this);
     }
 
-    template<typename T> AnyOptCustomFlags &operator=(const T & what)  {
+    template<class T, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, T>::type>
+    AnyOptCustomFlags &operator=(const T & what)  {
         ensure_flag_enabled(
                 FLAGS,
                 AnyOpt_FLAG_COPY_ONLY,
@@ -540,7 +558,8 @@ public:
         return *const_cast<AnyOptCustomFlags*>(this);
     }
 
-    template<typename T> AnyOptCustomFlags &operator=(T &&what)  {
+    template<class T, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, T>::type>
+    AnyOptCustomFlags &operator=(T &&what)  {
         ensure_flag_enabled(
                 FLAGS,
                 AnyOpt_FLAG_MOVE_ONLY,
@@ -584,7 +603,8 @@ public:
         return *const_cast<AnyOptCustomFlags*>(this);
     }
 
-    template<typename T> AnyOptCustomFlags &store(const T & what) const {
+    template<class T, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, T>::type>
+    AnyOptCustomFlags &store(const T & what) const {
         ensure_flag_enabled(
                 FLAGS,
                 AnyOpt_FLAG_COPY_ONLY,
@@ -594,7 +614,8 @@ public:
         return *const_cast<AnyOptCustomFlags*>(this);
     }
 
-    template<typename T> AnyOptCustomFlags &store(T && what) const {
+    template<class T, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, T>::type>
+    AnyOptCustomFlags &store(T && what) const {
         ensure_flag_enabled(
                 FLAGS,
                 AnyOpt_FLAG_MOVE_ONLY,
