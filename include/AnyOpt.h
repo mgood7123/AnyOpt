@@ -123,6 +123,10 @@ public:
         storage * clone_impl(P * value = nullptr) const {
             puts("AnyOptCustomFlags::storage clone VOID POINTER");
             fflush(stdout);
+            // maybe work? not sure about allocations,
+            // will probably need to deallocate() beforehand
+            // depending if it is allocated or not
+            // again, not sure, will need to test
             return new storage(data);
         }
 
