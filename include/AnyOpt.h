@@ -119,13 +119,25 @@ public:
         // in order to obtain its data correctly, however this is impossible for
         // situations such as copy constructors/initializations/assignments
 
-        virtual storage * clone() const {
+        template<class P, typename = typename std::enable_if<std::is_same<typename std::remove_reference<T>::type, void>::value, P>::type>
+        storage * clone_impl(P * value = nullptr) const {
+            puts("AnyOptCustomFlags::storage clone VOID POINTER");
+            fflush(stdout);
+            return new storage(data);
+        }
+
+        template<class P, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, P>::type>
+        storage * clone_impl(P * value = nullptr) const {
             puts("AnyOptCustomFlags::storage clone");
             fflush(stdout);
             // void* cannot be dereferenced
             return new storage(*data);
         }
-        
+
+        virtual storage * clone() const {
+            return clone_impl();
+        }
+
         template<class P, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, P>::type>
         storage(const P &x) {
             ensure_flag_enabled(

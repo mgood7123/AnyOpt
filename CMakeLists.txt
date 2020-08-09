@@ -1,10 +1,16 @@
 cmake_minimum_required(VERSION 3.4.1)
+
 project(AnyOpt)
 
 include_directories(include)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if(NOT COMMAND testBuilder_build)
+    add_subdirectory(testBuilder)
+    testBuilder_set_current_working_directory_to_default_binary_directory()
+endif()
 
 # Prevent overriding the parent project's compiler/linker
 # settings on Windows
@@ -22,11 +28,6 @@ if (CMAKE_VERSION VERSION_LESS 2.8.11)
 endif()
 
 # Now simply link against gtest or gtest_main as needed. Eg
-
-if(NOT COMMAND testBuilder_build)
-    add_subdirectory(testBuilder)
-    testBuilder_set_current_working_directory_to_default_binary_directory()
-endif()
 
 add_subdirectory(tests)
 
