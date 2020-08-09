@@ -14,6 +14,12 @@
 # EXTERNAL cache entries
 ########################
 
+//Value Computed by CMake
+AnyOpt_BINARY_DIR:STATIC=/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD
+
+//Value Computed by CMake
+AnyOpt_SOURCE_DIR:STATIC=/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt
+
 //Builds the googlemock subproject
 BUILD_GMOCK:BOOL=ON
 
@@ -196,7 +202,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=Project
+CMAKE_PROJECT_NAME:STATIC=AnyOpt
 
 //Value Computed by CMake
 CMAKE_PROJECT_VERSION:STATIC=1.10.0

@@ -2,12 +2,31 @@
 // Created by smallville7123 on 5/08/20.
 //
 
-#ifndef ANDROIDCOMPOSITOR_AnyOpt_H
-#define ANDROIDCOMPOSITOR_AnyOpt_H
+#ifndef AnyOpt_H
+#define AnyOpt_H
 #include <iostream>
 #include <memory>
 #include <string.h>
 #include <assert.h>
+
+#ifdef ANYOPT_RUNTIME_ASSERTION
+#define ASSERT_CODE(expr, msg) if (!expr) { \
+    fprintf(\
+        stderr,\
+        "--- ASSERTION TRIGGERED ---\n"\
+        "--- LOCATION: %s:%d ---\n"\
+        "--- FUNCTION: %s ---\n"\
+        "--- MESSAGE BEGIN ---\n"\
+        "%s\n"\
+        "--- MESSAGE END ---\n"\
+        , __FILE__, __LINE__, __PRETTY_FUNCTION__, msg\
+    ); \
+    fflush(stderr); \
+    abort(); \
+}
+#else
+#define ASSERT_CODE(expr, msg) static_assert(expr, msg)
+#endif
 
 // TODO: test flags
 
@@ -47,8 +66,8 @@ constexpr bool flag_is_not_set(uint64_t flags, uint64_t flag) {
     return !flag_is_set(flags, flag);
 }
 
-#define ensure_flag_enabled(FLAGS, flag, message)         static_assert(flag_is_set(FLAGS, flag), \
-message "\n" \
+#define ensure_flag_enabled(FLAGS, flag, message)         ASSERT_CODE(flag_is_set(FLAGS, flag), \
+"\n" message "\n" \
 "you can set it by appending\n" \
 "|" #flag "\n" \
 "to the flag list:\n" \
@@ -134,7 +153,7 @@ public:
             puts("AnyOptCustomFlags::storage move constructor");
             fflush(stdout);
             if (data == nullptr) {
-                const_cast<storage<T>*>(this)->data = new T(std::forward<T>(x));
+                const_cast<storage<T>*>(this)->data = new T(std::move(x));
                 const_cast<storage<T>*>(this)->pointer_is_allocated = true;
             } else {
                 std::swap(*data, x);
@@ -179,12 +198,12 @@ public:
             puts("AnyOptCustomFlags::storage move assignment");
             fflush(stdout);
             if (data == nullptr) {
-                const_cast<storage<T>*>(this)->data = new T(std::forward<T>(x));
+                const_cast<storage<T>*>(this)->data = new T(std::move(x));
                 const_cast<storage<T>*>(this)->pointer_is_allocated = true;
             }
             else
                 std::swap(*data, x);
-            return *const_cast<AnyOptCustomFlags*>(this);
+            return *const_cast<storage<T>*>(this);
         }
 
         storage &operator=(T * &x)  {
@@ -195,15 +214,11 @@ public:
             );
             puts("AnyOptCustomFlags::storage pointer assignment");
             fflush(stdout);
-            return *const_cast<AnyOptCustomFlags*>(this);
+            return *const_cast<storage<T>*>(this);
         }
 
+        // this MUST be able to be called regardless of stored type
         void deallocate() const {
-            ensure_flag_enabled(
-                    FLAGS,
-                    AnyOpt_FLAG_ENABLE_POINTERS,
-                    "this function is not allowed unless pointers are enabled"
-            );
             if (pointer_is_allocated) {
                 if (is_pointer) {
                     puts("AnyOptCustomFlags::storage data an allocated pointer");
@@ -287,6 +302,67 @@ public:
         const_cast<AnyOptCustomFlags*>(this)->data_is_allocated = false;
     }
 
+    template<typename T> void store_copy(const T & what, const char * type) const {
+        ensure_flag_enabled(
+                FLAGS,
+                AnyOpt_FLAG_COPY_ONLY,
+                "this function is not allowed unless the copy flag is set"
+        );
+        bool A = std::is_same<typename std::remove_reference<T>::type, AnyOptCustomFlags>::value;
+        bool B = std::is_same<typename std::remove_reference<T>::type, const AnyOptCustomFlags>::value;
+        printf("AnyOptCustomFlags copy %s\n", type);
+        fflush(stdout);
+        if (A || B) {
+            const AnyOptCustomFlags * constobj = reinterpret_cast<const AnyOptCustomFlags*>(&what);
+            AnyOptCustomFlags * obj = const_cast<AnyOptCustomFlags*>(constobj);
+            if (
+                    obj->data &&
+                    obj->data_is_allocated &&
+                    flag_is_set(
+                            FLAGS,
+                            AnyOpt_FLAG_ENABLE_CONVERSION_OF_ALLOCATION_COPY_TO_ALLOCATION_MOVE
+                    )
+            ) {
+                ensure_flag_enabled(
+                        FLAGS,
+                        AnyOpt_FLAG_MOVE_ONLY,
+                        "AnyOptCustomFlags is eligible for moving,"
+                        " however it has not been granted the ability to move data"
+                );
+                puts(
+                        "AnyOptCustomFlags is being moved "
+                        "because it has been marked as allocated and the "
+                        "AnyOpt_FLAG_MOVE_ONLY "
+                        "and "
+                        "AnyOpt_FLAG_ENABLE_CONVERSION_OF_ALLOCATION_COPY_TO_ALLOCATION_MOVE "
+                        "flags are set"
+                );
+                fflush(stdout);
+                store_move(*obj, type);
+            } else {
+                deallocate();
+                puts("AnyOptCustomFlags copying data");
+                fflush(stdout);
+                copy(reinterpret_cast<const AnyOptCustomFlags *>(&what));
+                puts("AnyOptCustomFlags copied data");
+                fflush(stdout);
+            }
+        } else {
+            puts("AnyOptCustomFlags allocating and assigning data");
+            fflush(stdout);
+            // use swap, move the data
+            if (data == nullptr) {
+                const_cast<AnyOptCustomFlags*>(this)->data = new storage<typename std::remove_reference<T>::type>(what);
+            } else {
+                *static_cast<storage<typename std::remove_reference<T>::type>*>(data) = what;
+            }
+            puts("AnyOptCustomFlags allocated and assigned data");
+            fflush(stdout);
+            const_cast<AnyOptCustomFlags*>(this)->isAnyNullOpt = false;
+            const_cast<AnyOptCustomFlags*>(this)->data_is_allocated = true;
+        }
+    }
+
     template<typename T> void store_move(T && what, const char * type) const {
         ensure_flag_enabled(
                 FLAGS,
@@ -309,58 +385,15 @@ public:
             fflush(stdout);
             // use swap, move the data
             if (data == nullptr) {
-                const_cast<AnyOptCustomFlags*>(this)->data = new storage<typename std::remove_reference<T>::type>(std::forward<T>(what));
+                const_cast<AnyOptCustomFlags*>(this)->data = new storage<typename std::remove_reference<T>::type>(std::move(what));
             } else {
-                *static_cast<storage<typename std::remove_reference<T>::type>*>(data) = std::forward<T>(what);
+                *static_cast<storage<typename std::remove_reference<T>::type>*>(data) = std::move(what);
             }
             puts("AnyOptCustomFlags allocated and assigned data");
             fflush(stdout);
             const_cast<AnyOptCustomFlags*>(this)->isAnyNullOpt = false;
             const_cast<AnyOptCustomFlags*>(this)->data_is_allocated = true;
         }
-    }
-
-    template<typename T> void store_copy(const T * what, const char * type) const {
-        ensure_flag_enabled(
-                FLAGS,
-                AnyOpt_FLAG_COPY_ONLY,
-                "this function is not allowed unless the copy flag is set"
-        );
-        printf("AnyOptCustomFlags copy %s\n", type);
-        fflush(stdout);
-        bool A = std::is_same<typename std::remove_reference<T>::type, AnyOptCustomFlags>::value;
-        bool B = std::is_same<typename std::remove_reference<T>::type, const AnyOptCustomFlags>::value;
-        printf("AnyOptCustomFlags move %s\n", type);
-        fflush(stdout);
-        if (A || B) {
-            const AnyOptCustomFlags * constobj = reinterpret_cast<const AnyOptCustomFlags*>(what);
-            AnyOptCustomFlags * obj = const_cast<AnyOptCustomFlags*>(constobj);
-            if (
-                    obj->data &&
-                    obj->data_is_allocated &&
-                    flag_is_set(
-                            FLAGS,
-                            AnyOpt_FLAG_ENABLE_CONVERSION_OF_ALLOCATION_COPY_TO_ALLOCATION_MOVE
-                    )
-                    ) {
-                ensure_flag_enabled(
-                        FLAGS,
-                        AnyOpt_FLAG_MOVE_ONLY,
-                        "AnyOptCustomFlags is eligible for moving,"
-                        " however it has not been granted the ability to move data"
-                );
-                puts(
-                        "AnyOptCustomFlags is being moved "
-                        "because it has been marked as allocated and the "
-                        "AnyOpt_FLAG_MOVE_ONLY "
-                        "and "
-                        "AnyOpt_FLAG_ENABLE_CONVERSION_OF_ALLOCATION_COPY_TO_ALLOCATION_MOVE "
-                        "flags are set"
-                );
-                fflush(stdout);
-                store_move(*obj, type);
-            }
-        } else copy(what);
     }
 
     template<typename T> void store_pointer(T * what, bool allocated, const char * type) const {
@@ -390,7 +423,7 @@ public:
                 AnyOpt_FLAG_COPY_ONLY,
                 "this constructor is not allowed unless the copy flag is set"
         );
-        store_copy(&what, "constructor");
+        store_copy(what, "constructor");
     }
 
     template<typename T> AnyOptCustomFlags(T &&what) {
@@ -427,7 +460,7 @@ public:
                 AnyOpt_FLAG_COPY_ONLY,
                 "this constructor is not allowed unless the copy flag is set"
         );
-        store_copy(&what, "constructor");
+        store_copy(what, "constructor");
     }
 
     /* Move constructor */
@@ -442,12 +475,8 @@ public:
         move(&what);
     }
 
+    // this MUST be able to be called regardless of stored type
     void deallocate() const {
-        ensure_flag_enabled(
-                FLAGS,
-                AnyOpt_FLAG_ENABLE_POINTERS,
-                "this function is not allowed unless pointers are enabled"
-        );
         puts("AnyOptCustomFlags deallocating data");
         fflush(stdout);
         if (data != nullptr) {
@@ -473,7 +502,7 @@ public:
                 AnyOpt_FLAG_COPY_ONLY,
                 "this assignment operator is not allowed unless the copy flag is set"
         );
-        store_copy(&what, "assignment");
+        store_copy(what, "assignment");
         return *const_cast<AnyOptCustomFlags*>(this);
     }
 
@@ -507,7 +536,7 @@ public:
                 AnyOpt_FLAG_COPY_ONLY,
                 "this assignment operator is not allowed unless the copy flag is set"
         );
-        store_copy(&what, "assignment");
+        store_copy(what, "assignment");
         return *const_cast<AnyOptCustomFlags*>(this);
     }
 
@@ -611,4 +640,4 @@ template <typename T> constexpr T AnyOpt_Cast(const AnyOpt & val)  {
     return val.get<T>();
 }
 
-#endif //ANDROIDCOMPOSITOR_AnyOpt_H
+#endif //AnyOpt_H
