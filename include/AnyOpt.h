@@ -119,6 +119,11 @@ public:
         // in order to obtain its data correctly, however this is impossible for
         // situations such as copy constructors/initializations/assignments
 
+        // class member cannot be redeclared
+
+        template<class P, typename = typename std::enable_if<true, P>::type> void * foo(P * v = nullptr) const {};
+        template<class P, typename = typename std::enable_if<false, P>::type> void * foo(P * v = nullptr) const {};
+
         template<class P, typename = typename std::enable_if<std::is_same<typename std::remove_reference<T>::type, void>::value, P>::type>
         storage * clone_impl(P * value = nullptr) const {
             puts("AnyOptCustomFlags::storage clone VOID POINTER");
