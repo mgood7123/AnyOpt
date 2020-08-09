@@ -30,5 +30,4 @@ endif()
 
 add_subdirectory(tests)
 
-set(AnyOpt_LIBRARY ${WINAPI_KERNEL_LIBRARY} PARENT_SCOPE)
 set(AnyOpt_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/include PARENT_SCOPE)
