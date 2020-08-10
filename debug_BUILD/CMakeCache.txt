@@ -289,12 +289,6 @@ INSTALL_GTEST:BOOL=ON
 PYTHON_EXECUTABLE:FILEPATH=/usr/bin/python
 
 //Value Computed by CMake
-Project_BINARY_DIR:STATIC=/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD
-
-//Value Computed by CMake
-Project_SOURCE_DIR:STATIC=/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt
-
-//Value Computed by CMake
 gmock_BINARY_DIR:STATIC=/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/googletest/googlemock
 
 //Dependencies for the target
