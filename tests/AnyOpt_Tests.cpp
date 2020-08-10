@@ -176,7 +176,5 @@ TEST(AnyOpt_Core_Data, data_obtaining) {
 }
 
 TEST(AnyOpt_Core, equality_test) {
-    AnyOpt a = 5;
-    AnyOpt b = 5;
-    ASSERT_EQ(a.get<int>(), b.get<int>());
+    ASSERT_EQ(AnyOpt(5).get<int>(), AnyOpt(5).get<int>());
 }
