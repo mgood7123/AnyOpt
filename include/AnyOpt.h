@@ -113,19 +113,10 @@ public:
         bool pointer_is_allocated = false;
         bool is_pointer = false;
 
-        // cannot be templated due to unknown data type of
-        // const_cast<AnyOptCustomFlags*>(this)->data = obj->data->clone();
-        // in which, obj->data is of type dummy, which needs to be cast to type Storage<T>
-        // in order to obtain its data correctly, however this is impossible for
-        // situations such as copy constructors/initializations/assignments
+        // https://wandbox.org/permlink/4TdbiBX3Yqx5fr2G why do i get no type named 'type' when using X::storage<void> but not when using temp<void> ? as my template declarations are exactly the same for both classes, yet it errors with template argument deduction/substitution failed:   for storage<void>
 
-        // class member cannot be redeclared
-
-        template<class P, typename = typename std::enable_if<true, P>::type> void * foo(P * v = nullptr) const {};
-        template<class P, typename = typename std::enable_if<false, P>::type> void * foo(P * v = nullptr) const {};
-
-        template<class P, typename = typename std::enable_if<std::is_same<typename std::remove_reference<T>::type, void>::value, P>::type>
-        storage * clone_impl(P * value = nullptr) const {
+        template<class P = void, typename std::enable_if<std::is_same<typename std::remove_reference<T>::type, void>::value, P>::type>
+        storage * clone_impl(P * unused1 = nullptr, P * unused2 = nullptr) const {
             puts("AnyOptCustomFlags::storage clone VOID POINTER");
             fflush(stdout);
             // maybe work? not sure about allocations,
@@ -135,11 +126,10 @@ public:
             return new storage(data);
         }
 
-        template<class P, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, P>::type>
-        storage * clone_impl(P * value = nullptr) const {
+        template<class P = void, typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, P>::type>
+        storage * clone_impl(P * unused1 = nullptr) const {
             puts("AnyOptCustomFlags::storage clone");
             fflush(stdout);
-            // void* cannot be dereferenced
             return new storage(*data);
         }
 

@@ -4,6 +4,12 @@
 /home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/CMakeFiles/list_install_components.dir
 /home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/CMakeFiles/rebuild_cache.dir
 /home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/CMakeFiles/edit_cache.dir
+/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/testBuilder/CMakeFiles/install/strip.dir
+/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/testBuilder/CMakeFiles/install/local.dir
+/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/testBuilder/CMakeFiles/install.dir
+/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/testBuilder/CMakeFiles/list_install_components.dir
+/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/testBuilder/CMakeFiles/rebuild_cache.dir
+/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/testBuilder/CMakeFiles/edit_cache.dir
 /home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/googletest/CMakeFiles/install/strip.dir
 /home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/googletest/CMakeFiles/install/local.dir
 /home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/googletest/CMakeFiles/install.dir
@@ -26,12 +32,6 @@
 /home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/googletest/googletest/CMakeFiles/edit_cache.dir
 /home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/googletest/googletest/CMakeFiles/gtest_main.dir
 /home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/googletest/googletest/CMakeFiles/gtest.dir
-/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/testBuilder/CMakeFiles/install/strip.dir
-/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/testBuilder/CMakeFiles/install/local.dir
-/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/testBuilder/CMakeFiles/install.dir
-/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/testBuilder/CMakeFiles/list_install_components.dir
-/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/testBuilder/CMakeFiles/rebuild_cache.dir
-/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/testBuilder/CMakeFiles/edit_cache.dir
 /home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/tests/CMakeFiles/install/strip.dir
 /home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/tests/CMakeFiles/install/local.dir
 /home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/tests/CMakeFiles/install.dir

@@ -69,7 +69,7 @@ TEST(AnyOpt_Flags_Move, valid_move) {
     AnyOptCustomFlags<AnyOpt_FLAG_MOVE_ONLY> a = 5;
 }
 
-//TEST(AnyOpt_Flags_Pointer, valid_pointer) {
-//    void * x;
-//    AnyOptCustomFlags<AnyOpt_FLAG_ENABLE_POINTERS> a = x;
-//}
+TEST(AnyOpt_Flags_Pointer, valid_pointer) {
+    void * x;
+    AnyOptCustomFlags<AnyOpt_FLAG_ENABLE_POINTERS> a = x;
+}

@@ -53,22 +53,22 @@ CMAKE_BINARY_DIR = /home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
-all: googletest/all
 all: testBuilder/all
+all: googletest/all
 all: tests/all
 
 .PHONY : all
 
 # The main recursive "preinstall" target.
-preinstall: googletest/preinstall
 preinstall: testBuilder/preinstall
+preinstall: googletest/preinstall
 preinstall: tests/preinstall
 
 .PHONY : preinstall
 
 # The main recursive "clean" target.
-clean: googletest/clean
 clean: testBuilder/clean
+clean: googletest/clean
 clean: tests/clean
 
 .PHONY : clean
