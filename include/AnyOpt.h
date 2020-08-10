@@ -113,29 +113,67 @@ public:
         bool pointer_is_allocated = false;
         bool is_pointer = false;
 
-        // https://wandbox.org/permlink/4TdbiBX3Yqx5fr2G why do i get no type named 'type' when using X::storage<void> but not when using temp<void> ? as my template declarations are exactly the same for both classes, yet it errors with template argument deduction/substitution failed:   for storage<void>
-
-        template<class P = void>
+        template<class P = void, typename = typename std::enable_if<std::is_same<typename std::remove_reference<T>::type, void>::value, P>::type>
         storage * clone_impl(P * unused1 = nullptr, P * unused2 = nullptr) const {
             bool A = std::is_same<typename std::remove_reference<T>::type, void>::value;
             RUNTIME_ASSERTION(
                     A,
                     "this function cannot be invoked for non void types"
             )
-            puts("AnyOptCustomFlags::storage clone VOID POINTER");
+            puts("AnyOptCustomFlags::storage clone void pointer");
             fflush(stdout);
-            // maybe work? not sure about allocations,
-            // will probably need to deallocate() beforehand
-            // depending if it is allocated or not
-            // again, not sure, will need to test
-            return nullptr;
+            printf(
+                    "AnyOptCustomFlags::storage clone void pointer - is_pointer: %s\n",
+                    is_pointer ? "true" : "false"
+            );
+            fflush(stdout);
+            printf(
+                    "AnyOptCustomFlags::storage clone void pointer - pointer_is_allocated: %s\n",
+                    pointer_is_allocated ? "true" : "false"
+            );
+            fflush(stdout);
+            // if data is allocated, a double free will occur
+            if (pointer_is_allocated) {
+                ensure_flag_enabled(
+                        FLAGS,
+                        AnyOpt_FLAG_ENABLE_CONVERSION_OF_ALLOCATION_COPY_TO_ALLOCATION_MOVE,
+                        "allocated void pointers CANNOT be copied and must be moved instead"
+                        " however the ability to convert a data copy to data move has not been"
+                        " granted"
+                );
+                ensure_flag_enabled(
+                        FLAGS,
+                        AnyOpt_FLAG_MOVE_ONLY,
+                        "allocated void pointers CANNOT be copied and must be moved instead"
+                        " however the ability to move data has not been granted"
+                );
+                puts(
+                        "storage is being moved "
+                        "because it has been marked as allocated and the "
+                        "AnyOpt_FLAG_MOVE_ONLY "
+                        "and "
+                        "AnyOpt_FLAG_ENABLE_CONVERSION_OF_ALLOCATION_COPY_TO_ALLOCATION_MOVE "
+                        "flags are set, and void pointers cannot be copied"
+                );
+                fflush(stdout);
+                // allocated
+                storage *A = new storage(data, pointer_is_allocated);
+                const_cast<storage<T> *>(this)->data = nullptr;
+                const_cast<storage<T> *>(this)->pointer_is_allocated = false;
+                const_cast<storage<T> *>(this)->is_pointer = false;
+                return A;
+            } else {
+                // not allocated
+                return new storage(data, pointer_is_allocated);
+            }
         }
 
-        template<class P = void, typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, P>::type>
+        template<class P = void, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, P>::type>
         storage * clone_impl(P * unused1 = nullptr) const {
             puts("AnyOptCustomFlags::storage clone");
             fflush(stdout);
-            return new storage(*data);
+            const T & data_ = *data;
+            return new storage(data_);
         }
 
         virtual storage * clone() const {

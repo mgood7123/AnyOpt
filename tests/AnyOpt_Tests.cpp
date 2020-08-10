@@ -56,7 +56,7 @@ TEST(AnyOpt_Flags_Copy, valid_copy_2) {
     AnyOptCustomFlags<AnyOpt_FLAG_COPY_ONLY> b = a;
 }
 
-TEST(AnyOpt_Flags_Copy, invalid_copy) {
+TEST(AnyOpt_Flags_Copy, invalid_copy_1) {
     // this will invoke the move constructor
     ASSERT_DEATH(
             {
@@ -64,6 +64,18 @@ TEST(AnyOpt_Flags_Copy, invalid_copy) {
              },
             AnyOpt_Catch_Flag_POSIX_REGEX(AnyOpt_FLAG_MOVE_ONLY)
      );
+}
+
+TEST(AnyOpt_Flags_Copy, invalid_copy_2) {
+    // this will invoke the move constructor
+    ASSERT_DEATH(
+            {
+                const int z = 5;
+                AnyOptCustomFlags<AnyOpt_FLAG_COPY_ONLY> a = z;
+                AnyOptCustomFlags<AnyOpt_FLAG_COPY_ONLY> b = a;
+            },
+            AnyOpt_Catch_Flag_POSIX_REGEX(AnyOpt_FLAG_MOVE_ONLY)
+    );
 }
 
 TEST(AnyOpt_Flags_Move, valid_move) {
@@ -75,7 +87,24 @@ TEST(AnyOpt_Flags_Move, valid_move) {
     AnyOptCustomFlags<AnyOpt_FLAG_MOVE_ONLY> a = 5;
 }
 
-TEST(AnyOpt_Flags_Pointer, valid_pointer) {
-    void * x;
+TEST(AnyOpt_Flags_Pointer, valid_void_pointer_1) {
+    void * x = nullptr;
     AnyOptCustomFlags<AnyOpt_FLAG_ENABLE_POINTERS> a = x;
+}
+
+TEST(AnyOpt_Flags_Pointer, copy_valid_void_pointer_1) {
+    void * x = nullptr;
+    const AnyOptCustomFlags<AnyOpt_FLAG_ENABLE_POINTERS|AnyOpt_FLAG_COPY_ONLY> a = x;
+    AnyOptCustomFlags<AnyOpt_FLAG_ENABLE_POINTERS|AnyOpt_FLAG_COPY_ONLY> b = a;
+}
+
+TEST(AnyOpt_Flags_Pointer, valid_void_pointer_2) {
+    void * x = new int;
+    AnyOptCustomFlags<AnyOpt_FLAG_ENABLE_POINTERS> a = AnyOptCustomFlags<AnyOpt_FLAG_ENABLE_POINTERS>(x, true);
+}
+
+TEST(AnyOpt_Flags_Pointer, copy_valid_void_pointer_2) {
+    void * x = new int;
+    const AnyOptCustomFlags<AnyOpt_FLAG_ENABLE_POINTERS|AnyOpt_FLAG_COPY_ONLY> a = AnyOptCustomFlags<AnyOpt_FLAG_ENABLE_POINTERS|AnyOpt_FLAG_COPY_ONLY>(x, true);
+    AnyOptCustomFlags<AnyOpt_FLAG_ENABLE_POINTERS|AnyOpt_FLAG_COPY_ONLY> b = a;
 }
