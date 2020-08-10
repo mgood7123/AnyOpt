@@ -64,7 +64,7 @@ constexpr bool flag_is_not_set(uint64_t flags, uint64_t flag) {
 }
 
 #define ensure_flag_enabled(FLAGS, flag, message)         ASSERT_CODE(flag_is_set(FLAGS, flag), \
-"\n" message "\n" \
+message "\n" \
 "you can set it by appending\n" \
 "|" #flag "\n" \
 "to the flag list:\n" \
