@@ -33,6 +33,10 @@
 #define ASSERT_CODE(expr, msg) static_assert(expr, msg)
 #endif
 
+#define AnyOpt_GTEST_ASSERT_DEATH(code_block, flag_that_must_be_enabled) \
+    ASSERT_DEATH(code_block, #flag_that_must_be_enabled)
+
+
 #define AnyOpt_Catch_Flag_POSIX_REGEX(FLAG_NAME) #FLAG_NAME
 
 // const AnyOpt a(new int, true);
@@ -70,7 +74,6 @@ message "\n" \
 "to the flag list:\n" \
 "AnyOptCustomFlags<Your_Flags|" #flag "> Your_Variable_Name;" \
 )
-
 
 #define enableFunctionIf(T, E) template<class T, typename = typename std::enable_if<E, T>::type>
 #define enableFunctionIfFlagIsSet(T, FLAGS, FLAG) enableFunctionIf(T, (FLAGS & FLAG) == 0)

@@ -98,13 +98,67 @@ TEST(AnyOpt_Flags_Pointer, copy_valid_void_pointer_1) {
     AnyOptCustomFlags<AnyOpt_FLAG_ENABLE_POINTERS|AnyOpt_FLAG_COPY_ONLY> b = a;
 }
 
+TEST(AnyOpt_Flags_Pointer, copy_valid_void_pointer_1_fail_1) {
+    AnyOpt_GTEST_ASSERT_DEATH(
+            {
+                void *x = nullptr;
+                const AnyOptCustomFlags<AnyOpt_FLAG_ENABLE_POINTERS> a = x;
+                AnyOptCustomFlags<AnyOpt_FLAG_ENABLE_POINTERS> b = a;
+            },
+            AnyOpt_FLAG_COPY_ONLY
+    );
+}
+
 TEST(AnyOpt_Flags_Pointer, valid_void_pointer_2) {
     void * x = new int;
     AnyOptCustomFlags<AnyOpt_FLAG_ENABLE_POINTERS> a = AnyOptCustomFlags<AnyOpt_FLAG_ENABLE_POINTERS>(x, true);
 }
 
 TEST(AnyOpt_Flags_Pointer, copy_valid_void_pointer_2) {
+    constexpr int flags =
+            AnyOpt_FLAG_ENABLE_POINTERS|
+            AnyOpt_FLAG_COPY_ONLY_AND_MOVE_ONLY|
+            AnyOpt_FLAG_ENABLE_CONVERSION_OF_ALLOCATION_COPY_TO_ALLOCATION_MOVE;
     void * x = new int;
-    const AnyOptCustomFlags<AnyOpt_FLAG_ENABLE_POINTERS|AnyOpt_FLAG_COPY_ONLY> a = AnyOptCustomFlags<AnyOpt_FLAG_ENABLE_POINTERS|AnyOpt_FLAG_COPY_ONLY>(x, true);
-    AnyOptCustomFlags<AnyOpt_FLAG_ENABLE_POINTERS|AnyOpt_FLAG_COPY_ONLY> b = a;
+    const AnyOptCustomFlags<flags> a = AnyOptCustomFlags<flags>(x, true);
+    AnyOptCustomFlags<flags> b = a;
+}
+
+TEST(AnyOpt_Flags_Pointer, copy_valid_void_pointer_2_fail_1) {
+    AnyOpt_GTEST_ASSERT_DEATH(
+        {
+            constexpr int flags = AnyOpt_FLAG_ENABLE_POINTERS;
+            void *x = new int;
+            const AnyOptCustomFlags<flags> a = AnyOptCustomFlags<flags>(x, true);
+            AnyOptCustomFlags<flags> b = a;
+        },
+        AnyOpt_FLAG_COPY_ONLY
+    );
+}
+
+TEST(AnyOpt_Flags_Pointer, copy_valid_void_pointer_2_fail_2) {
+    AnyOpt_GTEST_ASSERT_DEATH(
+            {
+                constexpr int flags = AnyOpt_FLAG_ENABLE_POINTERS|AnyOpt_FLAG_COPY_ONLY;
+                void *x = new int;
+                const AnyOptCustomFlags<flags> a = AnyOptCustomFlags<flags>(x, true);
+                AnyOptCustomFlags<flags> b = a;
+            },
+            AnyOpt_FLAG_ENABLE_CONVERSION_OF_ALLOCATION_COPY_TO_ALLOCATION_MOVE
+    );
+}
+
+TEST(AnyOpt_Flags_Pointer, copy_valid_void_pointer_2_fail_3) {
+    AnyOpt_GTEST_ASSERT_DEATH(
+            {
+                constexpr int flags =
+                        AnyOpt_FLAG_ENABLE_POINTERS|
+                        AnyOpt_FLAG_COPY_ONLY|
+                        AnyOpt_FLAG_ENABLE_CONVERSION_OF_ALLOCATION_COPY_TO_ALLOCATION_MOVE;
+                void *x = new int;
+                const AnyOptCustomFlags<flags> a = AnyOptCustomFlags<flags>(x, true);
+                AnyOptCustomFlags<flags> b = a;
+            },
+            AnyOpt_FLAG_MOVE_ONLY
+    );
 }
