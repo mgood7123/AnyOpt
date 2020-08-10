@@ -174,3 +174,9 @@ TEST(AnyOpt_Core_Data, data_obtaining) {
     AnyOpt c = n;
     ASSERT_EQ(c.get<void*>(), nullptr);
 }
+
+TEST(AnyOpt_Core, equality_test) {
+    AnyOpt a = 5;
+    AnyOpt b = 5;
+    ASSERT_EQ(a.get<int>(), b.get<int>());
+}

@@ -728,6 +728,27 @@ public:
         return *const_cast<AnyOptCustomFlags*>(this);
     }
 
+
+//    bool compare(const AnyOptCustomFlags &lhs, const AnyOptCustomFlags &rhs) const {
+// TYPES ARE REQUIRED TO BE KNOWN
+//        puts("AnyOptCustomFlags comparison");
+//        fflush(stdout);
+//        return
+//            (lhs.data == rhs.data) &&
+//            (lhs.isAnyNullOpt == rhs.isAnyNullOpt) &&
+//            (lhs.data_is_allocated == rhs.data_is_allocated);
+//    }
+//
+//    bool operator!=(const AnyOptCustomFlags &rhs) const {
+// TYPES ARE REQUIRED TO BE KNOWN
+//        return !compare(*this, rhs);
+//    }
+//
+//    bool operator==(const AnyOptCustomFlags &rhs) const {
+// TYPES ARE REQUIRED TO BE KNOWN
+//        return compare(*this, rhs);
+//    }
+//
     AnyOptCustomFlags() {
         puts("AnyOptCustomFlags constructor");
         fflush(stdout);
