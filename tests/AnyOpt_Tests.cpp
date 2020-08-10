@@ -162,3 +162,15 @@ TEST(AnyOpt_Flags_Pointer, copy_valid_void_pointer_2_fail_3) {
             AnyOpt_FLAG_MOVE_ONLY
     );
 }
+
+TEST(AnyOpt_Core_Data, data_obtaining) {
+    AnyOpt a = 5;
+    ASSERT_EQ(a.get<int>(), 5);
+    ASSERT_EQ(a.get<int*>()[0], 5);
+    AnyOpt b = AnyOpt(new int(5), true);
+    ASSERT_EQ(b.get<int>(), 5);
+    ASSERT_EQ(b.get<int*>()[0], 5);
+    void * n = nullptr;
+    AnyOpt c = n;
+    ASSERT_EQ(c.get<void*>(), nullptr);
+}

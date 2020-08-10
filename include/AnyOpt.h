@@ -12,7 +12,36 @@
 // if ANYOPT_RUNTIME_ASSERTION is defined
 // then AnyOpt uses runtime assertions instead of compile-time assertions
 
-#define RUNTIME_ASSERTION(expr, msg) if (!expr) { \
+#define RUNTIME_WARNING(expr, msg) if (!(expr)) { \
+    fprintf(\
+        stderr,\
+        "--- WARNING TRIGGERED ---\n"\
+        "--- LOCATION: %s:%d ---\n"\
+        "--- FUNCTION: %s ---\n"\
+        "--- MESSAGE BEGIN ---\n"\
+        "%s\n"\
+        "--- MESSAGE END ---\n"\
+        , __FILE__, __LINE__, __PRETTY_FUNCTION__, msg\
+    ); \
+    fflush(stderr); \
+}
+
+#define RUNTIME_WARNING_EXECUTE_ADDITIONAL_CODE(expr, msg, code_block) if (!(expr)) { \
+    fprintf(\
+        stderr,\
+        "--- WARNING TRIGGERED ---\n"\
+        "--- LOCATION: %s:%d ---\n"\
+        "--- FUNCTION: %s ---\n"\
+        "--- MESSAGE BEGIN ---\n"\
+        "%s\n"\
+        "--- MESSAGE END ---\n"\
+        , __FILE__, __LINE__, __PRETTY_FUNCTION__, msg\
+    ); \
+    fflush(stderr); \
+    code_block \
+}
+
+#define RUNTIME_ASSERTION(expr, msg) if (!(expr)) { \
     fprintf(\
         stderr,\
         "--- ASSERTION TRIGGERED ---\n"\
@@ -29,8 +58,22 @@
 
 #ifdef ANYOPT_RUNTIME_ASSERTION
 #define ASSERT_CODE(expr, msg) RUNTIME_ASSERTION(expr, msg)
+#define ensure_flag_enabled(FLAGS, flag, message)         ASSERT_CODE(flag_is_set(FLAGS, flag), \
+message "\n" \
+"you can set it by appending\n" \
+"|" #flag "\n" \
+"to the flag list:\n" \
+"AnyOptCustomFlags<Your_Flags|" #flag "> Your_Variable_Name;" \
+)
 #else
 #define ASSERT_CODE(expr, msg) static_assert(expr, msg)
+#define ensure_flag_enabled(FLAGS, flag, message)         ASSERT_CODE(flag_is_set(FLAGS, flag), \
+"\n" message "\n" \
+"you can set it by appending\n" \
+"|" #flag "\n" \
+"to the flag list:\n" \
+"AnyOptCustomFlags<Your_Flags|" #flag "> Your_Variable_Name;" \
+)
 #endif
 
 #define AnyOpt_GTEST_ASSERT_DEATH(code_block, flag_that_must_be_enabled) \
@@ -66,14 +109,6 @@ constexpr bool flag_is_set(uint64_t flags, uint64_t flag) {
 constexpr bool flag_is_not_set(uint64_t flags, uint64_t flag) {
     return !flag_is_set(flags, flag);
 }
-
-#define ensure_flag_enabled(FLAGS, flag, message)         ASSERT_CODE(flag_is_set(FLAGS, flag), \
-message "\n" \
-"you can set it by appending\n" \
-"|" #flag "\n" \
-"to the flag list:\n" \
-"AnyOptCustomFlags<Your_Flags|" #flag "> Your_Variable_Name;" \
-)
 
 #define enableFunctionIf(T, E) template<class T, typename = typename std::enable_if<E, T>::type>
 #define enableFunctionIfFlagIsSet(T, FLAGS, FLAG) enableFunctionIf(T, (FLAGS & FLAG) == 0)
@@ -700,15 +735,32 @@ public:
     ~AnyOptCustomFlags() {
         puts("AnyOptCustomFlags destructor");
         fflush(stdout);
-        printf("AnyOptCustomFlags isAnyNullOpt is %s\n", isAnyNullOpt ? "true" : "false");
-        fflush(stdout);
         if (!isAnyNullOpt) deallocate();
     }
 
-    template <typename T> T * get() const {
-        if (data != nullptr) {
-            return static_cast<storage<T>*>(data)->data;
-        } else return nullptr;
+    template<class T = void, typename = typename std::enable_if<std::is_pointer<T>::value, T>::type>
+    T get_impl(T * unused1 = nullptr, T * unused2 = nullptr) const {
+        RUNTIME_WARNING_EXECUTE_ADDITIONAL_CODE(
+                data != nullptr,
+                "trying to obtain data when no data is stored,"
+                " nullptr will be returned instead",
+                return nullptr;
+        )
+        storage<typename std::remove_pointer<T>::type>* s = static_cast<storage<typename std::remove_pointer<T>::type>*>(data);
+        return s->data;
+    }
+
+    template<class T = void, typename = typename std::enable_if<!std::is_pointer<T>::value, T>::type>
+    T get_impl(T * unused1 = nullptr) const {
+        RUNTIME_ASSERTION(data != nullptr, "trying to obtain data when no data is stored");
+        storage<typename std::remove_pointer<T>::type>* s = static_cast<storage<typename std::remove_pointer<T>::type>*>(data);
+        return *s->data;
+    }
+
+    template <typename T> T get() const {
+        puts("AnyOptCustomFlags get");
+        fflush(stdout);
+        return get_impl<T>();
     }
 };
 
