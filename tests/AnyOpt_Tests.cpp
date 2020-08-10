@@ -45,9 +45,15 @@ TEST(AnyOpt_Core, initialization_AnyNullOpt_data_checking) {
     ASSERT_EQ(a.isAnyNullOpt, true);
 }
 
-TEST(AnyOpt_Flags_Copy, valid_copy) {
+TEST(AnyOpt_Flags_Copy, valid_copy_1) {
     const int z = 5;
     AnyOptCustomFlags<AnyOpt_FLAG_COPY_ONLY> a = z;
+}
+
+TEST(AnyOpt_Flags_Copy, valid_copy_2) {
+    const int z = 5;
+    const AnyOptCustomFlags<AnyOpt_FLAG_COPY_ONLY> a = z;
+    AnyOptCustomFlags<AnyOpt_FLAG_COPY_ONLY> b = a;
 }
 
 TEST(AnyOpt_Flags_Copy, invalid_copy) {

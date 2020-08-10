@@ -115,17 +115,22 @@ public:
 
         // https://wandbox.org/permlink/4TdbiBX3Yqx5fr2G why do i get no type named 'type' when using X::storage<void> but not when using temp<void> ? as my template declarations are exactly the same for both classes, yet it errors with template argument deduction/substitution failed:   for storage<void>
 
-//        template<class P = void, typename std::enable_if<std::is_same<typename std::remove_reference<T>::type, void>::value, P>::type>
-//        storage * clone_impl(P * unused1 = nullptr, P * unused2 = nullptr) const {
-//            puts("AnyOptCustomFlags::storage clone VOID POINTER");
-//            fflush(stdout);
-//            // maybe work? not sure about allocations,
-//            // will probably need to deallocate() beforehand
-//            // depending if it is allocated or not
-//            // again, not sure, will need to test
-//            return new storage(data);
-//        }
-//
+        template<class P = void>
+        storage * clone_impl(P * unused1 = nullptr, P * unused2 = nullptr) const {
+            bool A = std::is_same<typename std::remove_reference<T>::type, void>::value;
+            RUNTIME_ASSERTION(
+                    A,
+                    "this function cannot be invoked for non void types"
+            )
+            puts("AnyOptCustomFlags::storage clone VOID POINTER");
+            fflush(stdout);
+            // maybe work? not sure about allocations,
+            // will probably need to deallocate() beforehand
+            // depending if it is allocated or not
+            // again, not sure, will need to test
+            return nullptr;
+        }
+
         template<class P = void, typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, P>::type>
         storage * clone_impl(P * unused1 = nullptr) const {
             puts("AnyOptCustomFlags::storage clone");
