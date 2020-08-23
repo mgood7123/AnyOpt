@@ -67,8 +67,9 @@ build_debug: debug_directories
 build_release: release_directories
 	cd ${release_build_dir} ; mkdir EXECUTABLES; cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE="-g0 -O3" .. ; make && if test -e EXECUTABLES ; then cd EXECUTABLES; for file in * ; do mv -v $$file ../../$(release_executable_dir)/$$FILE ; done ; cd ..; rmdir EXECUTABLES; fi
 
+
 build_debug_asan: debug_asan_directories
-	cd ${debug_asan_build_dir} ; mkdir EXECUTABLES; cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS_DEBUG="-g3 -O0 -fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope" .. ; make && if test -e EXECUTABLES ; then cd EXECUTABLES; for file in * ; do mv -v $$file ../../$(debug_asan_executable_dir)/$$FILE ; done ; cd ..; rmdir EXECUTABLES; fi
+	cd ${debug_asan_build_dir} ; mkdir EXECUTABLES; cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS_DEBUG="-g3 -O0 -fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope -fno-common" .. ; make && if test -e EXECUTABLES ; then cd EXECUTABLES; for file in * ; do mv -v $$file ../../$(debug_asan_executable_dir)/$$FILE ; done ; cd ..; rmdir EXECUTABLES; fi
 
 .PHONY: all
 
@@ -107,7 +108,7 @@ rebuild_test_debug:
 	make clean_debug
 	make test_debug
 
-asan_flags = asan_OPTIONS=detect_stack_use_after_return=1
+asan_flags = LSAN_OPTIONS=verbosity=1:log_threads=1 ASAN_OPTIONS=verbosity=1:detect_stack_use_after_return=1
 
 test_debug_asan: debug_asan
 	for file in $(debug_asan_executable_dir)/* ; do echo "testing $$file..." ; ${asan_flags} $$file ; echo "$$file returned with code $$?" ; done
