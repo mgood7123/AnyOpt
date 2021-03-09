@@ -530,13 +530,13 @@ cxxabi.h
 acxx_demangle.h
 -
 
-/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/googletest/googlemock/src/gmock_main.cc
+/Users/smallville7123/Desktop/CircularBuffer/app/src/main/cpp/CircularBuffer/AnyOpt/googletest/googlemock/src/gmock_main.cc
 iostream
 -
 gmock/gmock.h
-/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/googletest/googlemock/src/gmock/gmock.h
+/Users/smallville7123/Desktop/CircularBuffer/app/src/main/cpp/CircularBuffer/AnyOpt/googletest/googlemock/src/gmock/gmock.h
 gtest/gtest.h
-/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/googletest/googlemock/src/gtest/gtest.h
+/Users/smallville7123/Desktop/CircularBuffer/app/src/main/cpp/CircularBuffer/AnyOpt/googletest/googlemock/src/gtest/gtest.h
 tchar.h
 -
 

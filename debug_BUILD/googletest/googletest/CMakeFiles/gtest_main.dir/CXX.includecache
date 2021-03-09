@@ -326,9 +326,9 @@ cxxabi.h
 acxx_demangle.h
 -
 
-/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/googletest/googletest/src/gtest_main.cc
+/Users/smallville7123/Desktop/CircularBuffer/app/src/main/cpp/CircularBuffer/AnyOpt/googletest/googletest/src/gtest_main.cc
 cstdio
 -
 gtest/gtest.h
-/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/googletest/googletest/src/gtest/gtest.h
+/Users/smallville7123/Desktop/CircularBuffer/app/src/main/cpp/CircularBuffer/AnyOpt/googletest/googletest/src/gtest/gtest.h
 

@@ -45,6 +45,17 @@ TEST(AnyOpt_Core, initialization_AnyNullOpt_data_checking) {
     ASSERT_EQ(a.isAnyNullOpt, true);
 }
 
+TEST(AnyOpt_Core, initialization__nullptr_t__no_data_checking) {
+    AnyOpt a = nullptr;
+}
+
+TEST(AnyOpt_Core, initialization__nullptr_t__data_checking) {
+    AnyOpt a = nullptr;
+    ASSERT_EQ(a.data, nullptr);
+    ASSERT_EQ(a.data_is_allocated, false);
+    ASSERT_EQ(a.isAnyNullOpt, true);
+}
+
 TEST(AnyOpt_Flags_Copy, valid_copy_1) {
     const int z = 5;
     AnyOptCustomFlags<AnyOpt_FLAG_COPY_ONLY> a = z;
@@ -58,23 +69,23 @@ TEST(AnyOpt_Flags_Copy, valid_copy_2) {
 
 TEST(AnyOpt_Flags_Copy, invalid_copy_1) {
     // this will invoke the move constructor
-    ASSERT_DEATH(
+    AnyOpt_GTEST_ASSERT_DEATH(
             {
                  AnyOptCustomFlags<AnyOpt_FLAG_COPY_ONLY> a = 5;
              },
-            AnyOpt_Catch_Flag_POSIX_REGEX(AnyOpt_FLAG_MOVE_ONLY)
+            AnyOpt_FLAG_MOVE_ONLY
      );
 }
 
 TEST(AnyOpt_Flags_Copy, invalid_copy_2) {
     // this will invoke the move constructor
-    ASSERT_DEATH(
+    AnyOpt_GTEST_ASSERT_DEATH(
             {
                 const int z = 5;
                 AnyOptCustomFlags<AnyOpt_FLAG_COPY_ONLY> a = z;
                 AnyOptCustomFlags<AnyOpt_FLAG_COPY_ONLY> b = a;
             },
-            AnyOpt_Catch_Flag_POSIX_REGEX(AnyOpt_FLAG_MOVE_ONLY)
+            AnyOpt_FLAG_MOVE_ONLY
     );
 }
 

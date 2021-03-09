@@ -401,21 +401,49 @@ public:
     bool data_is_allocated = false;
 
     bool has_value() const {
-        return !isAnyNullOpt;
+        return !isAnyNullOpt || data != nullptr;
     }
 
-    AnyOptCustomFlags(const AnyNullOpt_t & opt): isAnyNullOpt(true) {
+    AnyOptCustomFlags(const AnyNullOpt_t & opt) {
         if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
             puts("AnyOptCustomFlags AnyNullOpt_t copy assignment");
             fflush(stdout);
         }
+        deallocate();
     }
 
-    AnyOptCustomFlags(AnyNullOpt_t && opt): isAnyNullOpt(true) {
+    AnyOptCustomFlags(AnyNullOpt_t && opt) {
+        ensure_flag_enabled(
+                FLAGS,
+                AnyOpt_FLAG_ENABLE_POINTERS,
+                "this function is not allowed unless pointers are enabled"
+        );
         if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
-            puts("AnyOptCustomFlags AnyNullOpt_t move assignment");
+            puts("AnyOptCustomFlags nullptr_t move assignment");
             fflush(stdout);
         }
+        deallocate();
+    }
+
+    AnyOptCustomFlags(const nullptr_t & opt) {
+        ensure_flag_enabled(
+                FLAGS,
+                AnyOpt_FLAG_ENABLE_POINTERS,
+                "this function is not allowed unless pointers are enabled"
+        );
+        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            puts("AnyOptCustomFlags nullptr_t copy assignment");
+            fflush(stdout);
+        }
+        deallocate();
+    }
+
+    AnyOptCustomFlags(nullptr_t && opt) {
+        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            puts("AnyOptCustomFlags nullptr_t move assignment");
+            fflush(stdout);
+        }
+        deallocate();
     }
 
     void move(const AnyOptCustomFlags * obj) const {
@@ -717,6 +745,34 @@ public:
         return *const_cast<AnyOptCustomFlags*>(this);
     }
 
+    AnyOptCustomFlags &operator=(const nullptr_t & what)  {
+        ensure_flag_enabled(
+                FLAGS,
+                AnyOpt_FLAG_COPY_ONLY,
+                "this assignment operator is not allowed unless the copy flag is set"
+        );
+        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            puts("AnyOptCustomFlags nullptr_t copy assignment");
+            fflush(stdout);
+        }
+        deallocate();
+        return *const_cast<AnyOptCustomFlags*>(this);
+    }
+
+    AnyOptCustomFlags &operator=(nullptr_t && what)  {
+        ensure_flag_enabled(
+                FLAGS,
+                AnyOpt_FLAG_MOVE_ONLY,
+                "this assignment operator is not allowed unless the move flag is set"
+        );
+        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            puts("AnyOptCustomFlags nullptr_t move assignment");
+            fflush(stdout);
+        }
+        deallocate();
+        return *const_cast<AnyOptCustomFlags*>(this);
+    }
+
     template<class T, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, T>::type>
     AnyOptCustomFlags &operator=(const T & what)  {
         ensure_flag_enabled(
@@ -831,6 +887,47 @@ public:
 //        return compare(*this, rhs);
 //    }
 //
+    bool operator==(const AnyNullOpt_t &rhs) const {
+        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            puts("AnyOptCustomFlags nullptr_t compare ==");
+            fflush(stdout);
+        }
+        return data == nullptr && data_is_allocated == false && isAnyNullOpt == true;
+    }
+
+    bool operator==(const nullptr_t &rhs) const {
+        ensure_flag_enabled(
+                FLAGS,
+                AnyOpt_FLAG_ENABLE_POINTERS,
+                "this function is not allowed unless pointers are enabled"
+        );
+        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            puts("AnyOptCustomFlags nullptr_t compare ==");
+            fflush(stdout);
+        }
+        return data == nullptr && data_is_allocated == false;
+    }
+
+    bool operator!=(const AnyNullOpt_t &rhs) const {
+        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            puts("AnyOptCustomFlags nullptr_t compare !=");
+            fflush(stdout);
+        }
+        return data != nullptr && isAnyNullOpt == false;
+    }
+
+    bool operator!=(const nullptr_t &rhs) const {
+        ensure_flag_enabled(
+                FLAGS,
+                AnyOpt_FLAG_ENABLE_POINTERS,
+                "this function is not allowed unless pointers are enabled"
+        );
+        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            puts("AnyOptCustomFlags nullptr_t compare !=");
+            fflush(stdout);
+        }
+        return data != nullptr;
+    }
     AnyOptCustomFlags() {
         if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
             puts("AnyOptCustomFlags constructor");
@@ -843,7 +940,7 @@ public:
             puts("AnyOptCustomFlags destructor");
             fflush(stdout);
         }
-        if (!isAnyNullOpt) deallocate();
+        deallocate();
     }
 
     template<class T = void, typename = typename std::enable_if<std::is_pointer<T>::value, T>::type>

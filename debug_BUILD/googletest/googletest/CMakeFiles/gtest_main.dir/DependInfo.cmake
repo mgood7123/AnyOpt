@@ -4,9 +4,9 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/googletest/googletest/src/gtest_main.cc" "/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/googletest/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o"
+  "/Users/smallville7123/Desktop/CircularBuffer/app/src/main/cpp/CircularBuffer/AnyOpt/googletest/googletest/src/gtest_main.cc" "/Users/smallville7123/Desktop/CircularBuffer/app/src/main/cpp/CircularBuffer/AnyOpt/debug_BUILD/googletest/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o"
   )
-set(CMAKE_CXX_COMPILER_ID "GNU")
+set(CMAKE_CXX_COMPILER_ID "Clang")
 
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
@@ -17,7 +17,7 @@ set(CMAKE_CXX_TARGET_INCLUDE_PATH
 
 # Targets to which this target links.
 set(CMAKE_TARGET_LINKED_INFO_FILES
-  "/home/smallville7123/AndroidCompositor/app/src/main/jni/GLIS/dependancies/AnyOpt/debug_BUILD/googletest/googletest/CMakeFiles/gtest.dir/DependInfo.cmake"
+  "/Users/smallville7123/Desktop/CircularBuffer/app/src/main/cpp/CircularBuffer/AnyOpt/debug_BUILD/googletest/googletest/CMakeFiles/gtest.dir/DependInfo.cmake"
   )
 
 # Fortran module output directory.
