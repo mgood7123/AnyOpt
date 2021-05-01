@@ -713,7 +713,7 @@ public:
                 AnyOpt_FLAG_COPY_ONLY,
                 "this assignment operator is not allowed unless the copy flag is set"
         );
-        store_copy(what, "assignment");
+        if (this != &what) store_copy(what, "assignment");
         return *const_cast<AnyOptCustomFlags*>(this);
     }
 
@@ -780,7 +780,7 @@ public:
                 AnyOpt_FLAG_COPY_ONLY,
                 "this assignment operator is not allowed unless the copy flag is set"
         );
-        store_copy(what, "assignment");
+        if (this != &what) store_copy(what, "assignment");
         return *const_cast<AnyOptCustomFlags*>(this);
     }
 
@@ -791,7 +791,7 @@ public:
                 AnyOpt_FLAG_MOVE_ONLY,
                 "this assignment operator is not allowed unless the move flag is set"
         );
-        store_move(what, "assignment");
+        if (this != &what) store_move(what, "assignment");
         return *const_cast<AnyOptCustomFlags*>(this);
     }
 
@@ -801,7 +801,7 @@ public:
                 AnyOpt_FLAG_ENABLE_POINTERS,
                 "this assignment operator is not allowed unless pointers are enabled"
         );
-        store_pointer(what, false, "assignment");
+        if (this != &what) store_pointer(what, false, "assignment");
         return *const_cast<AnyOptCustomFlags*>(this);
     }
 
