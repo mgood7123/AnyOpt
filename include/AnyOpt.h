@@ -211,7 +211,7 @@ public:
                         FLAGS,
                         AnyOpt_FLAG_ENABLE_CONVERSION_OF_ALLOCATION_COPY_TO_ALLOCATION_MOVE,
                         "allocated void pointers CANNOT be copied and must be moved instead"
-                        " however the ability to convert a data copy to a data move has not been"
+                        " however the ability to convert a data copy into a data move has not been"
                         " granted"
                 );
                 ensure_flag_enabled(
@@ -227,7 +227,7 @@ public:
                             "AnyOpt_FLAG_MOVE_ONLY "
                             "and "
                             "AnyOpt_FLAG_ENABLE_CONVERSION_OF_ALLOCATION_COPY_TO_ALLOCATION_MOVE "
-                            "flags are set, and pointers cannot be copied"
+                            "flags are set, and void pointers cannot be copied by dereference"
                     );
                     fflush(stdout);
                 }
