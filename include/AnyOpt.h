@@ -232,7 +232,7 @@ public:
                     fflush(stdout);
                 }
                 // allocated
-                storage<T> * obj = new storage<T>(obj->data, true);
+                storage<T> * obj = new storage<T>(data, true);
                 const_cast<storage<T>*>(this)->data = nullptr;
                 const_cast<storage<T>*>(this)->is_pointer = false;
                 const_cast<storage<T>*>(this)->pointer_is_allocated = false;
