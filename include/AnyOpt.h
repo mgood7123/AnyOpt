@@ -61,7 +61,7 @@ message "\n" \
 )
 #else
 #define ASSERT_CODE(expr, msg) static_assert(expr, msg)
-#define ensure_flag_enabled(FLAGS, flag, message)         ASSERT_CODE(flag_is_set(FLAGS, flag), \
+#define ensure_flag_enabled(FLAGS, flag, message) ASSERT_CODE(flag_is_set(FLAGS, flag), \
 "\n" message "\n" \
 "you can set it by appending\n" \
 "|" #flag "\n" \
@@ -87,8 +87,7 @@ message "\n" \
 #define AnyOpt_FLAG_ENABLE_NON_POINTERS (1 << 3)
 #define AnyOpt_FLAG_ENABLE_OPTIONAL_VALUE (1 << 4)
 #define AnyOpt_FLAG_ENABLE_POINTERS (1 << 5)
-#define AnyOpt_FLAG_IS_ALLOCATED (1 << 6)
-#define AnyOpt_FLAG_DEBUG (1 << 7)
+#define AnyOpt_FLAG_DEBUG (1 << 6)
 
 #define AnyOpt_FLAGS_DEFAULT (AnyOpt_FLAG_COPY_ONLY_AND_MOVE_ONLY | \
                                  AnyOpt_FLAG_ENABLE_CONVERSION_OF_ALLOCATION_COPY_TO_ALLOCATION_MOVE | \
@@ -127,10 +126,20 @@ public:
 
 template <int FLAGS> class AnyOptCustomFlags {
 public:
+    
     class dummy {
     public:
         virtual dummy *clone() const = 0;
         virtual ~dummy() {};
+        bool isDebug = false;
+    
+        void enableDebug() {
+            isDebug = true;
+        }
+    
+        void disableDebug() {
+            isDebug = false;
+        }
     };
 
     template<typename T>
@@ -149,7 +158,7 @@ public:
                     A,
                     "this function cannot be invoked for non void types"
             )
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            if (dummy::isDebug) {
                 puts("AnyOptCustomFlags::storage clone void pointer");
                 printf(
                         "AnyOptCustomFlags::storage clone void pointer - is_pointer: %s\n",
@@ -176,7 +185,7 @@ public:
                         "allocated void pointers CANNOT be copied and must be moved instead"
                         " however the ability to move data has not been granted"
                 );
-                if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+                if (dummy::isDebug) {
                     puts(
                             "storage is being moved "
                             "because it has been marked as allocated and the "
@@ -188,20 +197,20 @@ public:
                     fflush(stdout);
                 }
                 // allocated
-                storage *A = new storage(data, pointer_is_allocated);
+                storage *A_ = new storage(data, pointer_is_allocated, dummy::isDebug);
                 const_cast<storage<T> *>(this)->data = nullptr;
                 const_cast<storage<T> *>(this)->pointer_is_allocated = false;
                 const_cast<storage<T> *>(this)->is_pointer = false;
-                return A;
+                return A_;
             } else {
                 // not allocated
-                return new storage(data, pointer_is_allocated);
+                return new storage(data, pointer_is_allocated, dummy::isDebug);
             }
         }
 
         template<class P = void, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value && std::is_copy_constructible<typename std::remove_reference<T>::type>::value, P>::type>
         storage * clone_impl(P * unused1 = nullptr) const {
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            if (dummy::isDebug) {
                 puts("AnyOptCustomFlags::storage clone");
                 fflush(stdout);
             }
@@ -220,7 +229,7 @@ public:
                         "allocated void pointers CANNOT be copied and must be moved instead"
                         " however the ability to move data has not been granted"
                 );
-                if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+                if (dummy::isDebug) {
                     puts(
                             "storage is being moved "
                             "because it has been marked as allocated and the "
@@ -232,7 +241,7 @@ public:
                     fflush(stdout);
                 }
                 // allocated
-                storage<T> * obj = new storage<T>(data, true);
+                storage<T> * obj = new storage<T>(data, true, dummy::isDebug);
                 const_cast<storage<T>*>(this)->data = nullptr;
                 const_cast<storage<T>*>(this)->is_pointer = false;
                 const_cast<storage<T>*>(this)->pointer_is_allocated = false;
@@ -240,13 +249,13 @@ public:
             } else {
                 // not allocated
                 const T & data_ = *data;
-                return new storage(data_);
+                return new storage(data_, dummy::isDebug);
             }
         }
 
         template<class P = void, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value && !std::is_copy_constructible<typename std::remove_reference<T>::type>::value, P>::type>
         storage * clone_impl(P * unused1 = nullptr, P * unused2 = nullptr, P * unused3 = nullptr) const {
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            if (dummy::isDebug) {
                 puts("AnyOptCustomFlags::storage clone");
                 fflush(stdout);
             }
@@ -263,7 +272,7 @@ public:
                     "allocated void pointers CANNOT be copied and must be moved instead"
                     " however the ability to move data has not been granted"
             );
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            if (dummy::isDebug) {
                 puts(
                         "storage is being moved "
                         "because it has been marked as allocated and the "
@@ -275,7 +284,7 @@ public:
                 fflush(stdout);
             }
             // allocated or non copyable
-            storage<T> * obj = new storage<T>(obj->data, pointer_is_allocated);
+            storage<T> * obj = new storage<T>(obj->data, pointer_is_allocated, dummy::isDebug);
             const_cast<storage<T>*>(this)->data = nullptr;
             const_cast<storage<T>*>(this)->is_pointer = false;
             const_cast<storage<T>*>(this)->pointer_is_allocated = false;
@@ -287,34 +296,35 @@ public:
         }
 
         template<class P, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, P>::type>
-        storage(const P &x) {
+        storage(const P &x, bool debug) {
+            dummy::isDebug = debug;
             ensure_flag_enabled(
                     FLAGS,
                     AnyOpt_FLAG_COPY_ONLY,
                     "this function is not allowed unless the copy flag is set"
             );
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            if (dummy::isDebug) {
                 puts("AnyOptCustomFlags::storage copy constructor");
                 fflush(stdout);
             }
             if (data == nullptr) {
-                if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+                if (dummy::isDebug) {
                     puts("AnyOptCustomFlags::storage allocating and assigning data");
                     fflush(stdout);
                 }
                 const_cast<storage<T>*>(this)->data = new T(x);
                 const_cast<storage<T>*>(this)->pointer_is_allocated = true;
-                if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+                if (dummy::isDebug) {
                     puts("AnyOptCustomFlags::storage allocated and assigned data");
                     fflush(stdout);
                 }
             } else {
-                if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+                if (dummy::isDebug) {
                     puts("AnyOptCustomFlags::storage assigning data");
                     fflush(stdout);
                 }
                 *const_cast<storage<T>*>(this)->data = x;
-                if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+                if (dummy::isDebug) {
                     puts("AnyOptCustomFlags::storage assigned data");
                     fflush(stdout);
                 }
@@ -322,13 +332,14 @@ public:
         }
 
         template<class P, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, P>::type>
-        storage(P &&x) : is_clone_move(true) {
+        storage(P &&x, bool debug) : is_clone_move(true) {
+            dummy::isDebug = debug;
             ensure_flag_enabled(
                     FLAGS,
                     AnyOpt_FLAG_MOVE_ONLY,
                     "this function is not allowed unless the move flag is set"
             );
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            if (dummy::isDebug) {
                 puts("AnyOptCustomFlags::storage move constructor");
                 fflush(stdout);
             }
@@ -340,13 +351,14 @@ public:
             }
         }
 
-        storage(T * x, bool allocation) {
+        storage(T * x, bool allocation, bool debug) {
+            dummy::isDebug = debug;
             ensure_flag_enabled(
                     FLAGS,
                     AnyOpt_FLAG_ENABLE_POINTERS,
                     "this function is not allowed unless pointers are enabled"
             );
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            if (dummy::isDebug) {
                 puts("AnyOptCustomFlags::storage pointer constructor");
                 fflush(stdout);
             }
@@ -362,7 +374,7 @@ public:
                     AnyOpt_FLAG_COPY_ONLY,
                     "this assignment operator is not allowed unless the copy flag is set"
             );
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            if (dummy::isDebug) {
                 puts("AnyOptCustomFlags::storage copy assignment");
                 fflush(stdout);
             }
@@ -381,7 +393,7 @@ public:
                     AnyOpt_FLAG_MOVE_ONLY,
                     "this assignment operator is not allowed unless the move flag is set"
             );
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            if (dummy::isDebug) {
                 puts("AnyOptCustomFlags::storage move assignment");
                 fflush(stdout);
             }
@@ -400,7 +412,7 @@ public:
                     AnyOpt_FLAG_ENABLE_POINTERS,
                     "this assignment operator is not allowed unless pointers are enabled"
             );
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            if (dummy::isDebug) {
                 puts("AnyOptCustomFlags::storage pointer assignment");
                 fflush(stdout);
             }
@@ -413,7 +425,7 @@ public:
             // upon deletion
             if (pointer_is_allocated) {
                 if (is_pointer) {
-                    if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+                    if (dummy::isDebug) {
                         puts("AnyOptCustomFlags::storage data an allocated pointer");
                         fflush(stdout);
                     }
@@ -421,13 +433,13 @@ public:
                         delete data;
                         const_cast<storage<T>*>(this)->data = nullptr;
                     } else {
-                        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+                        if (dummy::isDebug) {
                             puts("AnyOptCustomFlags::storage data is an allocated pointer however it is assigned to nullptr, this is likely a bug");
                             fflush(stdout);
                         }
                     }
                 } else {
-                    if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+                    if (dummy::isDebug) {
                         puts("AnyOptCustomFlags::storage data is a synthetic allocated pointer");
                         fflush(stdout);
                     }
@@ -435,7 +447,7 @@ public:
                         delete data;
                         const_cast<storage<T>*>(this)->data = nullptr;
                     } else {
-                        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+                        if (dummy::isDebug) {
                             puts("AnyOptCustomFlags::storage data is a synthetic allocated pointer however it is assigned to nullptr, this is likely a bug");
                             fflush(stdout);
                         }
@@ -443,12 +455,12 @@ public:
                 }
             } else {
                 if (is_pointer) {
-                    if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+                    if (dummy::isDebug) {
                         puts("AnyOptCustomFlags::storage data a pointer however it is not allocated");
                         fflush(stdout);
                     }
                 } else {
-                    if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+                    if (dummy::isDebug) {
                         puts("AnyOptCustomFlags::storage data a synthetic pointer however it is not allocated, this is a bug");
                         fflush(stdout);
                     }
@@ -457,7 +469,7 @@ public:
         }
 
         ~storage() override {
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            if (dummy::isDebug) {
                 puts("AnyOptCustomFlags::storage destructor ");
                 fflush(stdout);
             }
@@ -468,13 +480,25 @@ public:
     dummy *data = nullptr;
     bool isAnyNullOpt = false;
     bool data_is_allocated = false;
-
+    bool isDebug = false;
+    
+    void enableDebug() {
+        isDebug = true;
+        if (data != nullptr) data->enableDebug();
+    }
+    
+    void disableDebug() {
+        isDebug = false;
+        if (data != nullptr) data->disableDebug();
+    }
+    
     bool has_value() const {
         return !isAnyNullOpt || data != nullptr;
     }
 
     AnyOptCustomFlags(const AnyNullOpt_t & opt) {
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) isDebug = true;
+        if (isDebug) {
             puts("AnyOptCustomFlags AnyNullOpt_t copy assignment");
             fflush(stdout);
         }
@@ -482,12 +506,13 @@ public:
     }
 
     AnyOptCustomFlags(AnyNullOpt_t && opt) {
+        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) isDebug = true;
         ensure_flag_enabled(
                 FLAGS,
                 AnyOpt_FLAG_ENABLE_POINTERS,
                 "this function is not allowed unless pointers are enabled"
         );
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             puts("AnyOptCustomFlags nullptr_t move assignment");
             fflush(stdout);
         }
@@ -495,12 +520,13 @@ public:
     }
 
     AnyOptCustomFlags(const nullptr_t & opt) {
+        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) isDebug = true;
         ensure_flag_enabled(
                 FLAGS,
                 AnyOpt_FLAG_ENABLE_POINTERS,
                 "this function is not allowed unless pointers are enabled"
         );
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             puts("AnyOptCustomFlags nullptr_t copy assignment");
             fflush(stdout);
         }
@@ -508,7 +534,8 @@ public:
     }
 
     AnyOptCustomFlags(nullptr_t && opt) {
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) isDebug = true;
+        if (isDebug) {
             puts("AnyOptCustomFlags nullptr_t move assignment");
             fflush(stdout);
         }
@@ -521,12 +548,19 @@ public:
                 AnyOpt_FLAG_MOVE_ONLY,
                 "this function is not allowed unless the move flag is set"
         );
-        const_cast<AnyOptCustomFlags*>(this)->data = obj->data;
-        const_cast<AnyOptCustomFlags*>(this)->data_is_allocated = obj->data_is_allocated;
-        const_cast<AnyOptCustomFlags*>(this)->isAnyNullOpt = obj->isAnyNullOpt;
-        const_cast<AnyOptCustomFlags*>(obj)->data = nullptr;
-        const_cast<AnyOptCustomFlags*>(obj)->isAnyNullOpt = true;
-        const_cast<AnyOptCustomFlags*>(obj)->data_is_allocated = false;
+
+        AnyOptCustomFlags* this_ = const_cast<AnyOptCustomFlags*>(this);
+        AnyOptCustomFlags* obj_ = const_cast<AnyOptCustomFlags*>(obj);
+
+        deallocate();
+
+        this_->data = obj_->data;
+        this_->isAnyNullOpt = obj_->isAnyNullOpt;
+        this_->data_is_allocated = obj_->data_is_allocated;
+
+        obj_->data = nullptr;
+        obj_->isAnyNullOpt = true;
+        obj_->data_is_allocated = false;
     }
 
     void copy(const AnyOptCustomFlags * obj) const {
@@ -535,9 +569,17 @@ public:
                 AnyOpt_FLAG_COPY_ONLY,
                 "this function is not allowed unless the copy flag is set"
         );
-        const_cast<AnyOptCustomFlags*>(this)->data = obj->data->clone();
-        const_cast<AnyOptCustomFlags*>(this)->isAnyNullOpt = false;
-        const_cast<AnyOptCustomFlags*>(this)->data_is_allocated = false;
+
+        AnyOptCustomFlags* this_ = const_cast<AnyOptCustomFlags*>(this);
+
+        deallocate();
+
+        if (obj->data != nullptr) {
+            this_->data = obj->data->clone();
+        }
+        this_->data->isDebug = isDebug;
+        this_->isAnyNullOpt = false;
+        this_->data_is_allocated = false;
     }
 
     template<class T, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, T>::type>
@@ -549,7 +591,7 @@ public:
         );
         bool A = std::is_same<typename std::remove_reference<T>::type, AnyOptCustomFlags>::value;
         bool B = std::is_same<typename std::remove_reference<T>::type, const AnyOptCustomFlags>::value;
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             printf("AnyOptCustomFlags copy %s\n", type);
             fflush(stdout);
         }
@@ -557,12 +599,12 @@ public:
             const AnyOptCustomFlags * constobj = reinterpret_cast<const AnyOptCustomFlags*>(&what);
             AnyOptCustomFlags * obj = const_cast<AnyOptCustomFlags*>(constobj);
             if (
-                    obj->data &&
-                    obj->data_is_allocated &&
-                    flag_is_set(
-                            FLAGS,
-                            AnyOpt_FLAG_ENABLE_CONVERSION_OF_ALLOCATION_COPY_TO_ALLOCATION_MOVE
-                    )
+                obj->data &&
+                obj->data_is_allocated &&
+                flag_is_set(
+                    FLAGS,
+                    AnyOpt_FLAG_ENABLE_CONVERSION_OF_ALLOCATION_COPY_TO_ALLOCATION_MOVE
+                )
             ) {
                 ensure_flag_enabled(
                         FLAGS,
@@ -570,7 +612,7 @@ public:
                         "AnyOptCustomFlags is eligible for moving,"
                         " however it has not been granted the ability to move data"
                 );
-                if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+                if (isDebug) {
                     puts(
                             "AnyOptCustomFlags is being moved "
                             "because it has been marked as allocated and the "
@@ -584,28 +626,24 @@ public:
                 store_move(*obj, type);
             } else {
                 deallocate();
-                if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+                if (isDebug) {
                     puts("AnyOptCustomFlags copying data");
                     fflush(stdout);
                 }
                 copy(reinterpret_cast<const AnyOptCustomFlags *>(&what));
-                if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+                if (isDebug) {
                     puts("AnyOptCustomFlags copied data");
                     fflush(stdout);
                 }
             }
         } else {
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            deallocate();
+            if (isDebug) {
                 puts("AnyOptCustomFlags allocating and assigning data");
                 fflush(stdout);
             }
-            // use swap, move the data
-            if (data == nullptr) {
-                const_cast<AnyOptCustomFlags*>(this)->data = new storage<typename std::remove_reference<T>::type>(what);
-            } else {
-                *static_cast<storage<typename std::remove_reference<T>::type>*>(data) = what;
-            }
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            const_cast<AnyOptCustomFlags*>(this)->data = new storage<typename std::remove_reference<T>::type>(what, isDebug);
+            if (isDebug) {
                 puts("AnyOptCustomFlags allocated and assigned data");
                 fflush(stdout);
             }
@@ -623,33 +661,28 @@ public:
         );
         bool A = std::is_same<typename std::remove_reference<T>::type, AnyOptCustomFlags>::value;
         bool B = std::is_same<typename std::remove_reference<T>::type, const AnyOptCustomFlags>::value;
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             printf("AnyOptCustomFlags move %s\n", type);
             fflush(stdout);
         }
         if (A || B) {
-            deallocate();
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            if (isDebug) {
                 puts("AnyOptCustomFlags moving data");
                 fflush(stdout);
             }
             move(const_cast<AnyOptCustomFlags*>(reinterpret_cast<const AnyOptCustomFlags*>(&what)));
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            if (isDebug) {
                 puts("AnyOptCustomFlags moved data");
                 fflush(stdout);
             }
         } else {
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            if (isDebug) {
                 puts("AnyOptCustomFlags allocating and assigning data");
                 fflush(stdout);
             }
-            // use swap, move the data
-            if (data == nullptr) {
-                const_cast<AnyOptCustomFlags*>(this)->data = new storage<typename std::remove_reference<T>::type>(std::move(what));
-            } else {
-                *static_cast<storage<typename std::remove_reference<T>::type>*>(data) = std::move(what);
-            }
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            deallocate();
+            const_cast<AnyOptCustomFlags*>(this)->data = new storage<typename std::remove_reference<T>::type>(std::move(what), isDebug);
+            if (isDebug) {
                 puts("AnyOptCustomFlags allocated and assigned data");
                 fflush(stdout);
             }
@@ -665,21 +698,21 @@ public:
                 AnyOpt_FLAG_ENABLE_POINTERS,
                 "this function is not allowed unless pointers are enabled"
         );
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             printf("AnyOptCustomFlags pointer %s\n", type);
             fflush(stdout);
         }
 
-        // TODO; should pointers be reallocated if they are synthetic (allocated == false)?
+        // TODO: should pointers be reallocated if they are synthetic (allocated == false)?
 
         deallocate();
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             puts("AnyOptCustomFlags allocating and assigning data");
             fflush(stdout);
         }
-        const_cast<AnyOptCustomFlags*>(this)->data = new storage<T>(what, allocated);
+        const_cast<AnyOptCustomFlags*>(this)->data = new storage<T>(what, allocated, isDebug);
         const_cast<AnyOptCustomFlags*>(this)->data_is_allocated = allocated;
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             puts("AnyOptCustomFlags allocated and assigned data");
             fflush(stdout);
         }
@@ -688,6 +721,7 @@ public:
 
     template<class T, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, T>::type>
     AnyOptCustomFlags(const T &what) {
+        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) isDebug = true;
         ensure_flag_enabled(
                 FLAGS,
                 AnyOpt_FLAG_COPY_ONLY,
@@ -698,6 +732,7 @@ public:
 
     template<class T, typename = typename std::enable_if<!std::is_same<typename std::remove_reference<T>::type, void>::value, T>::type>
     AnyOptCustomFlags(T &&what) {
+        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) isDebug = true;
         ensure_flag_enabled(
                 FLAGS,
                 AnyOpt_FLAG_MOVE_ONLY,
@@ -708,6 +743,7 @@ public:
 
     template<typename T>
     AnyOptCustomFlags(T * what) {
+        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) isDebug = true;
         ensure_flag_enabled(
                 FLAGS,
                 AnyOpt_FLAG_ENABLE_POINTERS,
@@ -718,6 +754,7 @@ public:
 
     template<typename T>
     AnyOptCustomFlags(T * what, bool allocation) {
+        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) isDebug = true;
         ensure_flag_enabled(
                 FLAGS,
                 AnyOpt_FLAG_ENABLE_POINTERS,
@@ -727,6 +764,7 @@ public:
     }
 
     AnyOptCustomFlags(const AnyOptCustomFlags &what) {
+        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) isDebug = true;
         ensure_flag_enabled(
                 FLAGS,
                 AnyOpt_FLAG_COPY_ONLY,
@@ -736,12 +774,13 @@ public:
     }
 
     AnyOptCustomFlags(AnyOptCustomFlags &&what) {
+        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) isDebug = true;
         ensure_flag_enabled(
                 FLAGS,
                 AnyOpt_FLAG_MOVE_ONLY,
                 "this constructor is not allowed unless the move flag is set"
         );
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             puts("AnyOptCustomFlags move constructor");
             fflush(stdout);
         }
@@ -750,12 +789,12 @@ public:
 
     // this MUST be able to be called regardless of stored type
     void deallocate() const {
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             puts("AnyOptCustomFlags deallocating data");
             fflush(stdout);
         }
         if (data != nullptr) {
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            if (isDebug) {
                 puts("AnyOptCustomFlags data is not nullptr");
                 puts("AnyOptCustomFlags deleting data");
                 fflush(stdout);
@@ -763,12 +802,12 @@ public:
             delete data;
             const_cast<AnyOptCustomFlags*>(this)->data = nullptr;
             const_cast<AnyOptCustomFlags*>(this)->data_is_allocated = false;
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            if (isDebug) {
                 puts("AnyOptCustomFlags deleted data");
                 fflush(stdout);
             }
         } else {
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            if (isDebug) {
                 puts("AnyOptCustomFlags data is nullptr, data has not been allocated or has already been deallocated");
                 fflush(stdout);
             }
@@ -782,7 +821,7 @@ public:
                 AnyOpt_FLAG_COPY_ONLY,
                 "this assignment operator is not allowed unless the copy flag is set"
         );
-        if (this != &what) store_copy(what, "assignment");
+        if ((void*)this != (void*)&what) store_copy(what, "assignment");
         return *const_cast<AnyOptCustomFlags*>(this);
     }
 
@@ -792,7 +831,7 @@ public:
                 AnyOpt_FLAG_COPY_ONLY,
                 "this assignment operator is not allowed unless the copy flag is set"
         );
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             puts("AnyOptCustomFlags AnyNullOpt_t copy assignment");
             fflush(stdout);
         }
@@ -806,7 +845,7 @@ public:
                 AnyOpt_FLAG_MOVE_ONLY,
                 "this assignment operator is not allowed unless the move flag is set"
         );
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             puts("AnyOptCustomFlags AnyNullOpt_t move assignment");
             fflush(stdout);
         }
@@ -820,7 +859,7 @@ public:
                 AnyOpt_FLAG_ENABLE_POINTERS,
                 "this assignment operator is not allowed unless pointers are enabled"
         );
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             puts("AnyOptCustomFlags AnyNullOpt_t move assignment");
             fflush(stdout);
         }
@@ -834,7 +873,7 @@ public:
                 AnyOpt_FLAG_COPY_ONLY,
                 "this assignment operator is not allowed unless the copy flag is set"
         );
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             puts("AnyOptCustomFlags nullptr_t copy assignment");
             fflush(stdout);
         }
@@ -848,7 +887,7 @@ public:
                 AnyOpt_FLAG_MOVE_ONLY,
                 "this assignment operator is not allowed unless the move flag is set"
         );
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             puts("AnyOptCustomFlags nullptr_t move assignment");
             fflush(stdout);
         }
@@ -863,7 +902,7 @@ public:
                 AnyOpt_FLAG_COPY_ONLY,
                 "this assignment operator is not allowed unless the copy flag is set"
         );
-        if (this != &what) store_copy(what, "assignment");
+        if ((void*)this != (void*)&what) store_copy(what, "assignment");
         return *const_cast<AnyOptCustomFlags*>(this);
     }
 
@@ -874,7 +913,7 @@ public:
                 AnyOpt_FLAG_MOVE_ONLY,
                 "this assignment operator is not allowed unless the move flag is set"
         );
-        if (this != &what) store_move(what, "assignment");
+        if ((void*)this != (void*)&what) store_move(what, "assignment");
         return *const_cast<AnyOptCustomFlags*>(this);
     }
 
@@ -884,7 +923,7 @@ public:
                 AnyOpt_FLAG_ENABLE_POINTERS,
                 "this assignment operator is not allowed unless pointers are enabled"
         );
-        if (this != &what) store_pointer(what, false, "assignment");
+        if ((void*)this != (void*)&what) store_pointer(what, false, "assignment");
         return *const_cast<AnyOptCustomFlags*>(this);
     }
 
@@ -894,7 +933,7 @@ public:
                 AnyOpt_FLAG_COPY_ONLY,
                 "this function is not allowed unless the copy flag is set"
         );
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             puts("AnyOptCustomFlags AnyNullOpt_t copy store");
             fflush(stdout);
         }
@@ -908,7 +947,7 @@ public:
                 AnyOpt_FLAG_MOVE_ONLY,
                 "this function is not allowed unless the move flag is set"
         );
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             puts("AnyOptCustomFlags AnyNullOpt_t move store");
             fflush(stdout);
         }
@@ -981,7 +1020,7 @@ public:
 //    }
 //
     bool operator==(const AnyNullOpt_t &rhs) const {
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             puts("AnyOptCustomFlags nullptr_t compare ==");
             fflush(stdout);
         }
@@ -994,7 +1033,7 @@ public:
                 AnyOpt_FLAG_ENABLE_POINTERS,
                 "this function is not allowed unless pointers are enabled"
         );
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             puts("AnyOptCustomFlags nullptr_t compare ==");
             fflush(stdout);
         }
@@ -1002,7 +1041,7 @@ public:
     }
 
     bool operator!=(const AnyNullOpt_t &rhs) const {
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             puts("AnyOptCustomFlags nullptr_t compare !=");
             fflush(stdout);
         }
@@ -1015,21 +1054,22 @@ public:
                 AnyOpt_FLAG_ENABLE_POINTERS,
                 "this function is not allowed unless pointers are enabled"
         );
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             puts("AnyOptCustomFlags nullptr_t compare !=");
             fflush(stdout);
         }
         return data != nullptr;
     }
     AnyOptCustomFlags() {
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) isDebug = true;
+        if (isDebug) {
             puts("AnyOptCustomFlags constructor");
             fflush(stdout);
         }
     }
-    
+
     ~AnyOptCustomFlags() {
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             puts("AnyOptCustomFlags destructor");
             fflush(stdout);
         }
@@ -1039,10 +1079,10 @@ public:
     template<class T = void, typename = typename std::enable_if<std::is_pointer<T>::value, T>::type>
     T get_impl(T * unused1 = nullptr, T * unused2 = nullptr) const {
         if (data == nullptr) {
-            if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+            if (isDebug) {
                 RUNTIME_WARNING_(
-                    "trying to obtain data when no data is stored,"
-                    " nullptr will be returned instead"
+                        "trying to obtain data when no data is stored,"
+                        " nullptr will be returned instead"
                 );
             }
             return nullptr;
@@ -1059,7 +1099,7 @@ public:
     }
 
     template <typename T> T get() const {
-        if (flag_is_set(FLAGS, AnyOpt_FLAG_DEBUG)) {
+        if (isDebug) {
             puts("AnyOptCustomFlags get");
             fflush(stdout);
         }
