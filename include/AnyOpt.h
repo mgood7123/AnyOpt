@@ -284,7 +284,7 @@ public:
                 fflush(stdout);
             }
             // allocated or non copyable
-            storage<T> * obj = new storage<T>(obj->data, pointer_is_allocated, dummy::isDebug);
+            storage<T> * obj = new storage<T>(data, pointer_is_allocated, dummy::isDebug);
             const_cast<storage<T>*>(this)->data = nullptr;
             const_cast<storage<T>*>(this)->is_pointer = false;
             const_cast<storage<T>*>(this)->pointer_is_allocated = false;
