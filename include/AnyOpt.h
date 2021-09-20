@@ -1093,7 +1093,7 @@ public:
         storage<typename std::remove_pointer<T>::type>* s = static_cast<storage<typename std::remove_pointer<T>::type>*>(data);
         return s->data;
     }
-
+    
     template<class T = void, typename = typename std::enable_if<!std::is_pointer<T>::value, T>::type>
     T get_impl(T * unused1 = nullptr) const {
         RUNTIME_ASSERTION(data != nullptr, "trying to obtain data when no data is stored");
@@ -1101,6 +1101,13 @@ public:
         return *s->data;
     }
 
+    template<class T = void, typename = typename std::enable_if<!std::is_pointer<T>::value && std::is_lvalue_reference<T>::value, T>::type>
+    T get_impl() const {
+        RUNTIME_ASSERTION(data != nullptr, "trying to obtain data when no data is stored");
+        storage<typename std::remove_reference<typename std::remove_pointer<T>::type>::type>* s = static_cast<storage<typename std::remove_reference<typename std::remove_pointer<T>::type>::type>*>(data);
+        return *s->data;
+    }
+    
     template <typename T> T get() const {
         if (isDebug) {
             puts("AnyOptCustomFlags get");
