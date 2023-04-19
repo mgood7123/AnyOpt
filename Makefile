@@ -24,7 +24,7 @@ $(release_build_dir_present):
 $(release_build_dir_absent):
 	mkdir $(release_build_dir)
 $(release_executable_dir_absent):
-	mkdir $(release_executable_dir)
+	mkdir $(release_executable_dir); mkdir $(release_executable_dir)_TMP
 
 $(debug_executable_dir_present):
 $(debug_build_dir_present):
@@ -32,7 +32,7 @@ $(debug_build_dir_present):
 $(debug_build_dir_absent):
 	mkdir $(debug_build_dir)
 $(debug_executable_dir_absent):
-	mkdir $(debug_executable_dir)
+	mkdir $(debug_executable_dir); mkdir $(debug_executable_dir)_TMP
 
 debug_asan_build_dir = debug_asan_BUILD
 debug_asan_build_dir_target = $(debug_asan_build_dir)-$(wildcard $(debug_asan_build_dir))
@@ -47,7 +47,7 @@ $(debug_asan_build_dir_present):
 $(debug_asan_build_dir_absent):
 	mkdir $(debug_asan_build_dir)
 $(debug_asan_executable_dir_absent):
-	mkdir $(debug_asan_executable_dir)
+	mkdir $(debug_asan_executable_dir); mkdir $(debug_asan_executable_dir)_TMP
 
 debug: build_debug
 
@@ -76,13 +76,13 @@ build_debug_asan: debug_asan_directories
 clean: clean_debug clean_release clean_debug_asan
 
 clean_debug:
-	rm -rf $(debug_build_dir) $(debug_executable_dir)
+	rm -rf $(debug_build_dir) $(debug_executable_dir) $(debug_executable_dir)_TMP
 
 clean_release:
-	rm -rf $(release_build_dir) $(release_executable_dir)
+	rm -rf $(release_build_dir) $(release_executable_dir) $(release_executable_dir)_TMP
 
 clean_debug_asan:
-	rm -rf $(debug_asan_build_dir) $(debug_asan_executable_dir)
+	rm -rf $(debug_asan_build_dir) $(debug_asan_executable_dir) $(debug_asan_executable_dir)_TMP
 
 rebuild: rebuild_debug rebuild_debug_asan rebuild_release
 
@@ -102,7 +102,7 @@ test: test_debug test_debug_asan test_release
 rebuild_test: rebuild_test_debug rebuild_test_debug_asan rebuild_test_release
 
 test_debug: debug
-	for file in $(debug_executable_dir)/* ; do echo "testing $$file..." ; $$file ; echo "$$file returned with code $$?" ; done
+	export TEST_TMPDIR=$(debug_executable_dir)_TMP; for file in $(debug_executable_dir)/* ; do echo "testing $$file..." ; $$file ; echo "$$file returned with code $$?" ; done
 
 rebuild_test_debug:
 	make clean_debug
@@ -111,14 +111,14 @@ rebuild_test_debug:
 asan_flags = LSAN_OPTIONS=verbosity=1:log_threads=1 ASAN_OPTIONS=verbosity=1:detect_stack_use_after_return=1
 
 test_debug_asan: debug_asan
-	for file in $(debug_asan_executable_dir)/* ; do echo "testing $$file..." ; ${asan_flags} $$file ; echo "$$file returned with code $$?" ; done
+	export TEST_TMPDIR=$(debug_asan_executable_dir)_TMP; for file in $(debug_asan_executable_dir)/* ; do echo "testing $$file..." ; ${asan_flags} $$file ; echo "$$file returned with code $$?" ; done
 
 rebuild_test_debug_asan:
 	make clean_debug_asan
 	make test_debug_asan
 
 test_release: release
-	for file in $(release_executable_dir)/* ; do echo "testing $$file..." ; $$file ; echo "$$file returned with code $$?" ; done
+	export TEST_TMPDIR=$(release_executable_dir)_TMP; for file in $(release_executable_dir)/* ; do echo "testing $$file..." ; $$file ; echo "$$file returned with code $$?" ; done
 
 rebuild_test_release:
 	make clean_release
@@ -130,14 +130,14 @@ test_valgrind: test_debug_valgrind test_release_valgrind
 rebuild_test_valgrind: rebuild_test_debug_valgrind rebuild_test_release_valgrind
 
 test_debug_valgrind: debug
-	for file in $(debug_executable_dir)/* ; do echo "testing $$file..." ; valgrind ${valgrind_flags} $$file ; echo "$$file returned with code $$?" ; done
+	export TEST_TMPDIR=$(debug_executable_dir)_TMP; for file in $(debug_executable_dir)/* ; do echo "testing $$file..." ; valgrind ${valgrind_flags} $$file ; echo "$$file returned with code $$?" ; done
 
 rebuild_test_debug_valgrind:
 	make clean_debug
 	make test_debug_valgrind
 
 test_release_valgrind: release
-	for file in $(release_executable_dir)/* ; do echo "testing $$file..." ; valgrind ${valgrind_flags} $$file ; echo "$$file returned with code $$?" ; done
+	export TEST_TMPDIR=$(release_executable_dir)_TMP; for file in $(release_executable_dir)/* ; do echo "testing $$file..." ; valgrind ${valgrind_flags} $$file ; echo "$$file returned with code $$?" ; done
 
 rebuild_test_release_valgrind:
 	make clean_release
@@ -149,21 +149,21 @@ test_gdb: test_debug_gdb test_debug_asan_gdb test_release_gdb
 rebuild_test_gdb: rebuild_test_debug_gdb rebuild_test_debug_asan_gdb rebuild_test_release_gdb
 
 test_debug_gdb: debug
-	for file in $(debug_executable_dir)/* ; do echo "testing $$file..." ; gdb ${gdb_flags} $$file ; echo "$$file returned with code $$?" ; done
+	export TEST_TMPDIR=$(debug_executable_dir)_TMP; for file in $(debug_executable_dir)/* ; do echo "testing $$file..." ; gdb ${gdb_flags} $$file ; echo "$$file returned with code $$?" ; done
 
 rebuild_test_debug_gdb:
 	make clean_debug
 	make test_debug_gdb
 
 test_debug_asan_gdb: debug_asan
-	for file in $(debug_asan_executable_dir)/* ; do echo "testing $$file..." ; ${asan_flags} gdb ${gdb_flags} $$file ; echo "$$file returned with code $$?" ; done
+	export TEST_TMPDIR=$(debug_asan_executable_dir)_TMP; for file in $(debug_asan_executable_dir)/* ; do echo "testing $$file..." ; ${asan_flags} gdb ${gdb_flags} $$file ; echo "$$file returned with code $$?" ; done
 
 rebuild_test_debug_asan_gdb:
 	make clean_debug_asan
 	make test_debug_asan_gdb
 
 test_release_gdb: release
-	for file in $(release_executable_dir)/* ; do echo "testing $$file..." ; gdb ${gdb_flags} $$file ; echo "$$file returned with code $$?" ; done
+	export TEST_TMPDIR=$(release_executable_dir)_TMP; for file in $(release_executable_dir)/* ; do echo "testing $$file..." ; gdb ${gdb_flags} $$file ; echo "$$file returned with code $$?" ; done
 
 rebuild_test_release_gdb:
 	make clean_release_asan

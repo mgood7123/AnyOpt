@@ -63,7 +63,7 @@ TEST(AnyOpt_Flags_Copy, valid_copy_1) {
 
 TEST(AnyOpt_Flags_Copy, valid_copy_2) {
     const int z = 5;
-    const AnyOptCustomFlags<AnyOpt_FLAG_COPY_ONLY> a = z;
+    const AnyOptCustomFlags<AnyOpt_FLAG_COPY_ONLY_AND_MOVE_ONLY|AnyOpt_FLAG_ENABLE_CONVERSION_OF_ALLOCATION_COPY_TO_ALLOCATION_MOVE> a = z;
     AnyOptCustomFlags<AnyOpt_FLAG_COPY_ONLY> b = a;
 }
 
